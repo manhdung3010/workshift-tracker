@@ -4,6 +4,7 @@ import {
   dayOffCount,
   missingDays,
   monthlyTotalMinutes,
+  workdayLogRows,
   weeklyTotals,
   workedDays
 } from "./records";
@@ -72,6 +73,61 @@ describe("weeklyTotals", () => {
     expect(weeklyTotals(records, "2026-05")).toEqual([
       { weekLabel: "Tuần 1", minutes: 480 },
       { weekLabel: "Tuần 2", minutes: 240 }
+    ]);
+  });
+});
+
+describe("workdayLogRows", () => {
+  it("formats saved records for the selected month newest first", () => {
+    expect(
+      workdayLogRows(
+        [
+          ...records,
+          record({
+            date: "2026-05-06",
+            checkInAt: "2026-05-06T01:30:00.000Z"
+          })
+        ],
+        "2026-05",
+        new Date("2026-05-06T03:00:00.000Z")
+      )
+    ).toEqual([
+      {
+        date: "2026-05-06",
+        day: "06",
+        weekday: "Wed",
+        time: "08:30 -> Working",
+        total: "1h30",
+        badge: "Working",
+        tone: "warning"
+      },
+      {
+        date: "2026-05-05",
+        day: "05",
+        weekday: "Tue",
+        time: "Day off",
+        total: "-",
+        badge: "Day off",
+        tone: "muted"
+      },
+      {
+        date: "2026-05-04",
+        day: "04",
+        weekday: "Mon",
+        time: "08:00 -> 12:00",
+        total: "4h00",
+        badge: "Short",
+        tone: "danger"
+      },
+      {
+        date: "2026-05-01",
+        day: "01",
+        weekday: "Fri",
+        time: "08:00 -> 16:00",
+        total: "8h00",
+        badge: "Full",
+        tone: "success"
+      }
     ]);
   });
 });

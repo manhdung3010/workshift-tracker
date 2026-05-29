@@ -12501,6 +12501,8 @@ const createReactComponent = (type, iconName, iconNamePascal, iconNode) => {
   Component.displayName = `${iconNamePascal}`;
   return Component;
 };
+const __iconNode$i = [["path", { "d": "M16 4l4 0l0 4", "key": "svg-0" }], ["path", { "d": "M14 10l6 -6", "key": "svg-1" }], ["path", { "d": "M8 20l-4 0l0 -4", "key": "svg-2" }], ["path", { "d": "M4 20l6 -6", "key": "svg-3" }], ["path", { "d": "M16 20l4 0l0 -4", "key": "svg-4" }], ["path", { "d": "M14 14l6 6", "key": "svg-5" }], ["path", { "d": "M8 4l-4 0l0 4", "key": "svg-6" }], ["path", { "d": "M4 4l6 6", "key": "svg-7" }]];
+const IconArrowsMaximize = createReactComponent("outline", "arrows-maximize", "ArrowsMaximize", __iconNode$i);
 const __iconNode$h = [["path", { "d": "M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6", "key": "svg-0" }], ["path", { "d": "M9 17v1a3 3 0 0 0 6 0v-1", "key": "svg-1" }]];
 const IconBell = createReactComponent("outline", "bell", "Bell", __iconNode$h);
 const __iconNode$g = [["path", { "d": "M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12", "key": "svg-0" }], ["path", { "d": "M16 3l0 4", "key": "svg-1" }], ["path", { "d": "M8 3l0 4", "key": "svg-2" }], ["path", { "d": "M4 11l16 0", "key": "svg-3" }], ["path", { "d": "M8 15h2v2h-2l0 -2", "key": "svg-4" }]];
@@ -12549,6 +12551,27 @@ function constructFrom(date, value) {
 }
 function toDate(argument, context) {
   return constructFrom(context || argument, argument);
+}
+function addMonths(date, amount, options) {
+  const _date = toDate(date, options?.in);
+  if (isNaN(amount)) return constructFrom(date, NaN);
+  if (!amount) {
+    return _date;
+  }
+  const dayOfMonth = _date.getDate();
+  const endOfDesiredMonth = constructFrom(date, _date.getTime());
+  endOfDesiredMonth.setMonth(_date.getMonth() + amount + 1, 0);
+  const daysInMonth = endOfDesiredMonth.getDate();
+  if (dayOfMonth >= daysInMonth) {
+    return endOfDesiredMonth;
+  } else {
+    _date.setFullYear(
+      endOfDesiredMonth.getFullYear(),
+      endOfDesiredMonth.getMonth(),
+      dayOfMonth
+    );
+    return _date;
+  }
 }
 let defaultOptions = {};
 function getDefaultOptions() {
@@ -14031,6 +14054,9 @@ function isSameMonth(laterDate, earlierDate, options) {
   );
   return laterDate_.getFullYear() === earlierDate_.getFullYear() && laterDate_.getMonth() === earlierDate_.getMonth();
 }
+function subMonths(date, amount, options) {
+  return addMonths(date, -1, options);
+}
 function elapsedMinutes(record, now) {
   if (!record.checkInAt) {
     return 0;
@@ -14064,6 +14090,107 @@ function formatDuration(minutes) {
   const remainingMinutes = safeMinutes % 60;
   return `${hours}h${remainingMinutes.toString().padStart(2, "0")}`;
 }
+function isInMonth(record, month) {
+  return record.date.startsWith(`${month}-`);
+}
+function localDateFromKey(date) {
+  return /* @__PURE__ */ new Date(`${date}T00:00:00`);
+}
+function localTimeLabel(value) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(value));
+}
+function weekdayLabel(date) {
+  return new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(localDateFromKey(date));
+}
+function workdayLogRows(records, month, now) {
+  return records.filter((record) => isInMonth(record, month)).sort((left, right) => right.date.localeCompare(left.date)).map((record) => {
+    const day = record.date.slice(8, 10);
+    if (record.isDayOff) {
+      return {
+        date: record.date,
+        day,
+        weekday: weekdayLabel(record.date),
+        time: "Day off",
+        total: "-",
+        badge: "Day off",
+        tone: "muted"
+      };
+    }
+    if (!record.checkInAt) {
+      return {
+        date: record.date,
+        day,
+        weekday: weekdayLabel(record.date),
+        time: "Not started",
+        total: "-",
+        badge: "Idle",
+        tone: "muted"
+      };
+    }
+    const minutes = elapsedMinutes(record, now);
+    const checkIn = localTimeLabel(record.checkInAt);
+    const checkOut = record.checkOutAt ? localTimeLabel(record.checkOutAt) : "Working";
+    const isComplete = minutes >= record.targetMinutes;
+    const isWorking = !record.checkOutAt;
+    return {
+      date: record.date,
+      day,
+      weekday: weekdayLabel(record.date),
+      time: `${checkIn} -> ${checkOut}`,
+      total: formatDuration(minutes),
+      badge: isWorking ? "Working" : isComplete ? "Full" : "Short",
+      tone: isWorking ? "warning" : isComplete ? "success" : "danger"
+    };
+  });
+}
+function minutesFromTime(value) {
+  const [hours = "0", minutes = "0"] = value.split(":");
+  return Number(hours) * 60 + Number(minutes);
+}
+function localMinutes(now) {
+  return now.getHours() * 60 + now.getMinutes();
+}
+function dayNumber(now) {
+  return now.getDay();
+}
+function minutesBetween(startTime, endTime) {
+  return Math.max(0, minutesFromTime(endTime) - minutesFromTime(startTime));
+}
+function effectiveWorkMinutes(settings) {
+  const workMinutes = minutesBetween(settings.workStartTime, settings.workEndTime);
+  const lunchMinutes = minutesBetween(settings.lunchStartTime, settings.lunchEndTime);
+  return Math.max(0, workMinutes - lunchMinutes);
+}
+function isInLunchBreak(settings, now) {
+  const current = localMinutes(now);
+  return current >= minutesFromTime(settings.lunchStartTime) && current < minutesFromTime(settings.lunchEndTime);
+}
+function isInWorkingWindow(settings, now) {
+  const current = localMinutes(now);
+  return settings.workdays.includes(dayNumber(now)) && current >= minutesFromTime(settings.workStartTime) && current < minutesFromTime(settings.workEndTime) && !isInLunchBreak(settings, now);
+}
+function shouldRemindToStart({
+  settings,
+  todayRecord,
+  now,
+  lastReminderAt
+}) {
+  if (!settings.notifyStartReminder || todayRecord?.checkInAt || todayRecord?.isDayOff) {
+    return false;
+  }
+  if (!isInWorkingWindow(settings, now)) {
+    return false;
+  }
+  if (!lastReminderAt) {
+    return true;
+  }
+  const elapsedMs = now.getTime() - lastReminderAt.getTime();
+  return elapsedMs >= settings.startReminderIntervalMinutes * 6e4;
+}
 const BROWSER_STORAGE_KEY = "workshift-tracker-state";
 const NO_ELECTRON_WINDOW_CONTROL = {
   ok: false,
@@ -14075,7 +14202,14 @@ const defaultState = {
     targetMinutes: 480,
     startAtLogin: true,
     showWidget: true,
-    notifyOnComplete: true
+    notifyOnComplete: true,
+    notifyStartReminder: true,
+    startReminderIntervalMinutes: 5,
+    workStartTime: "09:00",
+    workEndTime: "18:00",
+    lunchStartTime: "12:00",
+    lunchEndTime: "13:00",
+    workdays: [1, 2, 3, 4, 5]
   },
   records: []
 };
@@ -14184,6 +14318,14 @@ const workshiftApi = {
     }
     return electronApi.minimizeWindow();
   },
+  restoreWindow() {
+    const electronApi = getElectronApi();
+    if (!electronApi) {
+      console.warn("[window:restore]", NO_ELECTRON_WINDOW_CONTROL);
+      return Promise.resolve(NO_ELECTRON_WINDOW_CONTROL);
+    }
+    return electronApi.restoreWindow();
+  },
   closeWindow() {
     const electronApi = getElectronApi();
     if (electronApi) {
@@ -14201,43 +14343,6 @@ const workshiftApi = {
     return Promise.resolve({ ok: true, action: "close" });
   }
 };
-const sampleLogs = [
-  {
-    day: "04",
-    weekday: "Mon",
-    time: "09:00 -> 17:15",
-    total: "8h15",
-    badge: "Full",
-    tone: "success"
-  },
-  { day: "05", weekday: "Tue", time: "09:20 -> 17:30", total: "8h10", badge: "Full", tone: "success" },
-  {
-    day: "06",
-    weekday: "Wed",
-    time: "10:00 -> 15:30",
-    total: "5h30",
-    badge: "Short",
-    tone: "danger"
-  },
-  { day: "07", weekday: "Thu", time: "Day off", total: "-", badge: "Day off", tone: "muted" },
-  {
-    day: "08",
-    weekday: "Fri",
-    time: "08:50 -> 17:00",
-    total: "8h10",
-    badge: "Full",
-    tone: "success"
-  },
-  { day: "11", weekday: "Mon", time: "09:10 -> 17:05", total: "7h55", badge: "Short", tone: "danger" },
-  {
-    day: "12",
-    weekday: "Tue",
-    time: "09:30 -> 16:00",
-    total: "6h30",
-    badge: "Short",
-    tone: "danger"
-  }
-];
 function statusLabel(status) {
   if (status === "not_started") return "Idle";
   if (status === "working") return "Working";
@@ -14247,14 +14352,60 @@ function statusLabel(status) {
 function todayKey(now) {
   return format(now, "yyyy-MM-dd");
 }
-function Toggle({ checked }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `toggle ${checked ? "toggle-on" : ""}`, "aria-hidden": "true" });
+const weekdayOptions = [
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
+  { value: 0, label: "Sun" }
+];
+function Toggle({
+  checked,
+  onChange,
+  label
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "button",
+    {
+      className: `toggle-button ${checked ? "toggle-on" : ""}`,
+      type: "button",
+      "aria-label": label,
+      "aria-pressed": checked,
+      onClick: () => onChange?.(!checked),
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { "aria-hidden": "true" })
+    }
+  );
+}
+function targetHoursValue(minutes) {
+  return (minutes / 60).toFixed(2).replace(/\.00$/, "");
+}
+function notify(title, body) {
+  if (!("Notification" in window)) {
+    return;
+  }
+  if (Notification.permission === "granted") {
+    new Notification(title, { body });
+    return;
+  }
+  if (Notification.permission === "default") {
+    void Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        new Notification(title, { body });
+      }
+    });
+  }
 }
 function App() {
   const [screen, setScreen] = reactExports.useState("home");
   const [state, setState] = reactExports.useState(null);
   const [now, setNow] = reactExports.useState(() => /* @__PURE__ */ new Date());
+  const [selectedMonth, setSelectedMonth] = reactExports.useState(() => /* @__PURE__ */ new Date());
   const [showEarlyWarning, setShowEarlyWarning] = reactExports.useState(false);
+  const [isCompact, setIsCompact] = reactExports.useState(false);
+  const lastStartReminderAt = reactExports.useRef(void 0);
+  const completedNotificationDate = reactExports.useRef(void 0);
   reactExports.useEffect(() => {
     void workshiftApi.getState().then(setState);
   }, []);
@@ -14272,35 +14423,70 @@ function App() {
   const target = todayRecord?.targetMinutes ?? state?.settings.targetMinutes ?? 480;
   const progressPercent = Math.round(progressRatio(todayRecord, now) * 100);
   const remaining = Math.max(0, target - elapsed);
+  const compactStateLabel = status === "completed" ? "DONE" : status === "checked_out" ? "ENDED" : "LEFT";
   const canCheckIn = status === "not_started";
   const canEndNormally = status === "completed";
   const isWorking = status === "working" || status === "completed";
   const checkInLabel = todayRecord?.checkInAt ? format(new Date(todayRecord.checkInAt), "HH:mm") : "--:--";
   const estimatedEnd = todayRecord?.checkInAt ? format(new Date(new Date(todayRecord.checkInAt).getTime() + target * 6e4), "HH:mm") : "--:--";
-  const monthRecords = state?.records.filter((record) => isSameMonth(new Date(record.date), now)) ?? [];
-  monthRecords.reduce(
+  const monthRecords = state?.records.filter((record) => isSameMonth(new Date(record.date), selectedMonth)) ?? [];
+  const monthlyMinutes = monthRecords.reduce(
     (total, record) => total + elapsedMinutes(record, now),
     0
   );
+  const logRows = workdayLogRows(state?.records ?? [], format(selectedMonth, "yyyy-MM"), now);
+  const completedLogCount = logRows.filter((row) => row.badge === "Full").length;
+  const shortLogCount = logRows.filter((row) => row.badge === "Short").length;
+  const settings = state?.settings;
+  const effectiveMinutes = settings ? effectiveWorkMinutes(settings) : 0;
+  const targetHours = settings ? targetHoursValue(settings.targetMinutes) : "8";
+  reactExports.useEffect(() => {
+    if (!settings) {
+      return;
+    }
+    if (settings.notifyOnComplete && status === "completed") {
+      const key = todayKey(now);
+      if (completedNotificationDate.current !== key) {
+        completedNotificationDate.current = key;
+        notify("WorkShift complete", "You have reached today's target work time.");
+      }
+    }
+    if (shouldRemindToStart({
+      settings,
+      todayRecord,
+      now,
+      lastReminderAt: lastStartReminderAt.current
+    })) {
+      lastStartReminderAt.current = now;
+      notify("Start your shift", "You are inside your work window and have not started yet.");
+    }
+  }, [now, settings, status, todayRecord]);
   function handleMinimize(event) {
     event.preventDefault();
     event.stopPropagation();
+    setIsCompact(true);
     void workshiftApi.minimizeWindow();
   }
   function handleMinimizePointerDown(event) {
     event.preventDefault();
     event.stopPropagation();
+    setIsCompact(true);
     void workshiftApi.minimizeWindow();
   }
   function handleClose(event) {
     event.preventDefault();
     event.stopPropagation();
+    setIsCompact(true);
     void workshiftApi.minimizeWindow();
   }
   async function handleCheckIn() {
     setShowEarlyWarning(false);
     setState(await workshiftApi.checkIn());
     setNow(/* @__PURE__ */ new Date());
+  }
+  async function handleRestoreWindow() {
+    setIsCompact(false);
+    await workshiftApi.restoreWindow();
   }
   async function handleEndShift() {
     if (!canEndNormally) {
@@ -14315,7 +14501,58 @@ function App() {
     setShowEarlyWarning(false);
     setNow(/* @__PURE__ */ new Date());
   }
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("main", { className: "app-frame", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "app-window", children: [
+  async function handleSettingsPatch(settingsPatch) {
+    setState(await workshiftApi.updateSettings(settingsPatch));
+  }
+  function handleWorkdayToggle(day) {
+    if (!settings) {
+      return;
+    }
+    const workdays = settings.workdays.includes(day) ? settings.workdays.filter((item) => item !== day) : [...settings.workdays, day].sort((left, right) => left - right);
+    void handleSettingsPatch({ workdays });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("main", { className: `app-frame ${isCompact ? "app-frame-compact" : ""}`, children: /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: `app-window ${isCompact ? "app-window-compact" : ""}`, children: isCompact ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "section",
+    {
+      className: `compact-widget compact-status-${status}`,
+      "aria-label": "Compact work shift widget",
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "compact-dragbar", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "compact-brand", "aria-hidden": "true", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "compact-mark", children: "W" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("i", {})
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              className: "compact-zoom-button",
+              type: "button",
+              "aria-label": "Zoom to full window",
+              title: "Zoom to full window",
+              onClick: () => void handleRestoreWindow(),
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconArrowsMaximize, { size: 15 })
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "compact-body", children: canCheckIn ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            className: "compact-start-button",
+            type: "button",
+            onClick: () => void handleCheckIn(),
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(IconPlayerPlay, { size: 18 }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "START" })
+            ]
+          }
+        ) : /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "compact-countdown", "aria-live": "polite", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: formatDuration(remaining) }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: compactStateLabel }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("small", { children: estimatedEnd })
+        ] }) })
+      ]
+    }
+  ) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "custom-titlebar", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "titlebar-brand", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "app-mark", children: "W" }),
@@ -14511,25 +14748,44 @@ function App() {
     ] }),
     screen === "history" && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "screen-content", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "month-nav", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", "aria-label": "Previous month", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconChevronLeft, { size: 18 }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: format(now, "MMMM yyyy") }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", "aria-label": "Next month", children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconChevronRight, { size: 18 }) })
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "aria-label": "Previous month",
+            onClick: () => setSelectedMonth((month) => subMonths(month)),
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconChevronLeft, { size: 18 })
+          }
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: format(selectedMonth, "MMMM yyyy") }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
+          {
+            type: "button",
+            "aria-label": "Next month",
+            onClick: () => setSelectedMonth((month) => addMonths(month, 1)),
+            children: /* @__PURE__ */ jsxRuntimeExports.jsx(IconChevronRight, { size: 18 })
+          }
+        )
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "summary-strip", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Total hours" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "142h" })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: formatDuration(monthlyMinutes) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Completed" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "18" })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: completedLogCount })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Short" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "2" })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: shortLogCount })
         ] })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "log-list", children: sampleLogs.map((item) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "log-row", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "log-list", children: logRows.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "empty-log", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(IconHistory, { size: 18 }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "No saved work logs for this month" })
+      ] }) : logRows.map((item) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "log-row", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "log-date", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: item.day }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: item.weekday })
@@ -14539,59 +14795,187 @@ function App() {
           /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: item.total })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `badge badge-${item.tone}`, children: item.badge })
-      ] }, `${item.day}-${item.weekday}`)) })
+      ] }, item.date)) })
     ] }),
     screen === "settings" && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "screen-content settings-content", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(IconClock, { size: 18 }),
-          "Shift config"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Target work hours" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "8h" })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "weekday-row", "aria-label": "Working days", children: ["Mon", "Tue", "Wed", "Thu", "Fri"].map((day) => /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: day }, day)) })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(IconBell, { size: 18 }),
-          "Notifications"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Notify when done" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Toggle, { checked: true })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Hourly reminder" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Toggle, { checked: true })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Sound" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Toggle, { checked: true })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(IconCalendarEvent, { size: 18 }),
-          "App"
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Launch on Windows startup" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Toggle, { checked: true })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Minimize to system tray" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Toggle, { checked: true })
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-actions", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { className: "toolbar-button", type: "button", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(IconWindowMinimize, { size: 16 }),
-            "Tray"
+      settings && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(IconClock, { size: 18 }),
+            "Working schedule"
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { className: "toolbar-button", type: "button", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(IconDownload, { size: 16 }),
-            "Export data"
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "setting-grid", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Work start" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  type: "time",
+                  value: settings.workStartTime,
+                  onChange: (event) => void handleSettingsPatch({ workStartTime: event.target.value })
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Work end" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  type: "time",
+                  value: settings.workEndTime,
+                  onChange: (event) => void handleSettingsPatch({ workEndTime: event.target.value })
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Lunch start" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  type: "time",
+                  value: settings.lunchStartTime,
+                  onChange: (event) => void handleSettingsPatch({ lunchStartTime: event.target.value })
+                }
+              )
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Lunch end" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  type: "time",
+                  value: settings.lunchEndTime,
+                  onChange: (event) => void handleSettingsPatch({ lunchEndTime: event.target.value })
+                }
+              )
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row setting-row-input", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Required work hours" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                min: "0",
+                step: "0.25",
+                type: "number",
+                value: targetHours,
+                onChange: (event) => void handleSettingsPatch({
+                  targetMinutes: Math.max(0, Math.round(Number(event.target.value) * 60))
+                })
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-metric", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Effective schedule" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: formatDuration(effectiveMinutes) })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "weekday-row", "aria-label": "Working days", children: weekdayOptions.map((day) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              className: settings.workdays.includes(day.value) ? "weekday-active" : "",
+              type: "button",
+              onClick: () => handleWorkdayToggle(day.value),
+              children: day.label
+            },
+            day.value
+          )) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(IconBell, { size: 18 }),
+            "Notifications"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Notify when target is reached" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Toggle,
+              {
+                checked: settings.notifyOnComplete,
+                label: "Toggle target reached notification",
+                onChange: (checked) => void handleSettingsPatch({ notifyOnComplete: checked })
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Remind if shift has not started" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Toggle,
+              {
+                checked: settings.notifyStartReminder,
+                label: "Toggle start reminder notification",
+                onChange: (checked) => void handleSettingsPatch({ notifyStartReminder: checked })
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row setting-row-input", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Reminder interval" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "input-with-unit", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "input",
+                {
+                  min: "1",
+                  step: "1",
+                  type: "number",
+                  value: settings.startReminderIntervalMinutes,
+                  onChange: (event) => void handleSettingsPatch({
+                    startReminderIntervalMinutes: Math.max(
+                      1,
+                      Math.round(Number(event.target.value))
+                    )
+                  })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "min" })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(IconCalendarEvent, { size: 18 }),
+            "App"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Launch on Windows startup" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Toggle,
+              {
+                checked: settings.startAtLogin,
+                label: "Toggle launch on Windows startup",
+                onChange: (checked) => void handleSettingsPatch({ startAtLogin: checked })
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { className: "setting-row", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Compact widget" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Toggle,
+              {
+                checked: settings.showWidget,
+                label: "Toggle compact widget",
+                onChange: (checked) => void handleSettingsPatch({ showWidget: checked })
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-actions", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(
+              "button",
+              {
+                className: "toolbar-button",
+                type: "button",
+                onClick: () => {
+                  setIsCompact(true);
+                  void workshiftApi.minimizeWindow();
+                },
+                children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(IconWindowMinimize, { size: 16 }),
+                  "Widget"
+                ]
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { className: "toolbar-button", type: "button", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(IconDownload, { size: 16 }),
+              "Export data"
+            ] })
           ] })
         ] })
       ] }),
@@ -14600,7 +14984,7 @@ function App() {
         "Local-only data storage"
       ] })
     ] })
-  ] }) });
+  ] }) }) });
 }
 ReactDOM.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(React.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })

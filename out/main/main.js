@@ -11,7 +11,14 @@ const DEFAULT_SETTINGS = {
   targetMinutes: 480,
   startAtLogin: true,
   showWidget: true,
-  notifyOnComplete: true
+  notifyOnComplete: true,
+  notifyStartReminder: true,
+  startReminderIntervalMinutes: 5,
+  workStartTime: "09:00",
+  workEndTime: "18:00",
+  lunchStartTime: "12:00",
+  lunchEndTime: "13:00",
+  workdays: [1, 2, 3, 4, 5]
 };
 function localDateKey(nowIso) {
   return format(new Date(nowIso), "yyyy-MM-dd");
@@ -103,12 +110,30 @@ function createShiftStore(filePath) {
     }
   };
 }
-function minimizeAppWindow(targetWindow) {
+const COMPACT_WIDTH = 220;
+const COMPACT_HEIGHT = 150;
+const MAIN_WIDTH = 444;
+const MAIN_HEIGHT = 760;
+const MAIN_MIN_WIDTH = 380;
+const MAIN_MIN_HEIGHT = 680;
+function compactAppWindow(targetWindow) {
   if (!targetWindow || targetWindow.isDestroyed()) {
     return { ok: false, action: "none", reason: "window-not-found" };
   }
-  targetWindow.hide();
-  return { ok: true, action: "hide", reason: "sent-to-tray" };
+  targetWindow.setMinimumSize(COMPACT_WIDTH, COMPACT_HEIGHT);
+  targetWindow.setSize(COMPACT_WIDTH, COMPACT_HEIGHT);
+  targetWindow.setAlwaysOnTop(true, "floating");
+  return { ok: true, action: "compact" };
+}
+function restoreAppWindow(targetWindow) {
+  if (!targetWindow || targetWindow.isDestroyed()) {
+    return { ok: false, action: "none", reason: "window-not-found" };
+  }
+  targetWindow.setMinimumSize(MAIN_MIN_WIDTH, MAIN_MIN_HEIGHT);
+  targetWindow.setSize(MAIN_WIDTH, MAIN_HEIGHT);
+  targetWindow.setAlwaysOnTop(false);
+  targetWindow.center();
+  return { ok: true, action: "restore" };
 }
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow = null;
@@ -120,6 +145,9 @@ function getControlWindow(eventSender) {
 }
 function registerIpcHandlers() {
   const store = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  app.setLoginItemSettings({
+    openAtLogin: store.getState().settings.startAtLogin
+  });
   ipcMain.handle("workshift:get-state", () => store.getState());
   ipcMain.handle("workshift:check-in", (_event, nowIso) => store.checkIn(nowIso));
   ipcMain.handle("workshift:check-out", (_event, nowIso) => store.checkOut(nowIso));
@@ -129,15 +157,28 @@ function registerIpcHandlers() {
   );
   ipcMain.handle(
     "workshift:update-settings",
-    (_event, settingsPatch) => store.updateSettings(settingsPatch)
+    (_event, settingsPatch) => {
+      const nextState = store.updateSettings(settingsPatch);
+      if (settingsPatch.startAtLogin !== void 0) {
+        app.setLoginItemSettings({
+          openAtLogin: settingsPatch.startAtLogin
+        });
+      }
+      return nextState;
+    }
   );
   ipcMain.handle("window:minimize", (event) => {
-    const result = minimizeAppWindow(getControlWindow(event.sender));
+    const result = compactAppWindow(getControlWindow(event.sender));
     console.info("[window:minimize]", result);
     return result;
   });
+  ipcMain.handle("window:restore", (event) => {
+    const result = restoreAppWindow(getControlWindow(event.sender));
+    console.info("[window:restore]", result);
+    return result;
+  });
   ipcMain.handle("window:close", (event) => {
-    const result = minimizeAppWindow(getControlWindow(event.sender));
+    const result = compactAppWindow(getControlWindow(event.sender));
     console.info("[window:close]", result);
     return result;
   });

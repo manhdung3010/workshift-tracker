@@ -14,7 +14,14 @@ const defaultState: WorkshiftState = {
     targetMinutes: 480,
     startAtLogin: true,
     showWidget: true,
-    notifyOnComplete: true
+    notifyOnComplete: true,
+    notifyStartReminder: true,
+    startReminderIntervalMinutes: 5,
+    workStartTime: "09:00",
+    workEndTime: "18:00",
+    lunchStartTime: "12:00",
+    lunchEndTime: "13:00",
+    workdays: [1, 2, 3, 4, 5]
   },
   records: []
 };
@@ -155,6 +162,17 @@ export const workshiftApi = {
     }
 
     return electronApi.minimizeWindow();
+  },
+
+  restoreWindow() {
+    const electronApi = getElectronApi();
+
+    if (!electronApi) {
+      console.warn("[window:restore]", NO_ELECTRON_WINDOW_CONTROL);
+      return Promise.resolve(NO_ELECTRON_WINDOW_CONTROL);
+    }
+
+    return electronApi.restoreWindow();
   },
 
   closeWindow() {

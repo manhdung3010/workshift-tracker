@@ -24,7 +24,14 @@ describe("workshiftApi", () => {
         targetMinutes: 480,
         startAtLogin: true,
         showWidget: true,
-        notifyOnComplete: true
+        notifyOnComplete: true,
+        notifyStartReminder: true,
+        startReminderIntervalMinutes: 5,
+        workStartTime: "09:00",
+        workEndTime: "18:00",
+        lunchStartTime: "12:00",
+        lunchEndTime: "13:00",
+        workdays: [1, 2, 3, 4, 5]
       },
       records: []
     });

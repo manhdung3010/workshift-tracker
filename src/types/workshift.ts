@@ -15,6 +15,13 @@ export type WorkshiftSettings = {
   startAtLogin: boolean;
   showWidget: boolean;
   notifyOnComplete: boolean;
+  notifyStartReminder: boolean;
+  startReminderIntervalMinutes: number;
+  workStartTime: string;
+  workEndTime: string;
+  lunchStartTime: string;
+  lunchEndTime: string;
+  workdays: number[];
 };
 
 export type WorkshiftState = {

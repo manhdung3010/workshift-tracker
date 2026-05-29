@@ -72,6 +72,171 @@ button {
   background: var(--surface);
 }
 
+.app-frame-compact {
+  align-items: stretch;
+  justify-content: stretch;
+  min-height: 100vh;
+  padding: 0;
+}
+
+.app-window-compact {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.compact-widget {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgb(31 36 48 / 18%);
+}
+
+.compact-dragbar {
+  -webkit-app-region: drag;
+  app-region: drag;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  padding: 6px 7px 5px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-soft);
+  user-select: none;
+}
+
+.compact-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.compact-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.compact-brand i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.compact-status-not_started .compact-brand i {
+  background: #dc2626;
+}
+
+.compact-status-working .compact-brand i {
+  background: #eab308;
+}
+
+.compact-status-completed .compact-brand i {
+  background: #16a34a;
+}
+
+.compact-zoom-button {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 23px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.compact-zoom-button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.compact-body {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: 12px;
+}
+
+.compact-start-button,
+.compact-countdown {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.compact-start-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.compact-start-button:hover {
+  filter: brightness(1.06);
+}
+
+.compact-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.compact-countdown span {
+  color: var(--primary);
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.compact-countdown strong {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.compact-countdown small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.compact-status-completed .compact-countdown span {
+  color: var(--success);
+}
+
 .custom-titlebar {
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -587,6 +752,19 @@ h2 {
   overflow-y: auto;
 }
 
+.empty-log {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 118px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .log-row {
   display: grid;
   grid-template-columns: 44px 1fr auto;
@@ -639,6 +817,12 @@ h2 {
   color: var(--danger);
 }
 
+.badge-warning {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
 .badge-muted {
   background: var(--surface-soft);
   color: var(--muted);
@@ -667,6 +851,74 @@ h2 {
   font-size: 12px;
 }
 
+.setting-row-input input,
+.setting-grid input,
+.input-with-unit input {
+  width: 92px;
+  min-height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 7px;
+}
+
+.setting-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.setting-grid label,
+.settings-metric {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.setting-grid input {
+  width: 100%;
+  background: var(--surface);
+}
+
+.settings-metric {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.settings-metric strong {
+  color: var(--primary);
+  font-size: 14px;
+}
+
+.input-with-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.input-with-unit input {
+  width: 58px;
+}
+
+.input-with-unit span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .setting-row:first-of-type {
   border-top: 0;
 }
@@ -681,28 +933,36 @@ h2 {
   margin-top: 10px;
 }
 
-.weekday-row span {
+.weekday-row button {
   flex: 1;
   padding: 6px 0;
-  border: 1px solid var(--primary);
+  border: 1px solid var(--border-strong);
   border-radius: 7px;
-  background: var(--primary-soft);
-  color: var(--primary);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
   font-size: 11px;
   font-weight: 800;
   text-align: center;
 }
 
-.toggle {
+.weekday-row .weekday-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.toggle-button {
   position: relative;
   width: 34px;
   height: 18px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--surface-soft);
+  cursor: pointer;
 }
 
-.toggle::after {
+.toggle-button span {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -718,7 +978,7 @@ h2 {
   background: var(--primary);
 }
 
-.toggle-on::after {
+.toggle-on span {
   left: 18px;
   background: #ffffff;
 }

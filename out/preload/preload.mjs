@@ -7,6 +7,7 @@ const api = {
   updateRecord: (record) => ipcRenderer.invoke("workshift:update-record", record),
   updateSettings: (settingsPatch) => ipcRenderer.invoke("workshift:update-settings", settingsPatch),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
+  restoreWindow: () => ipcRenderer.invoke("window:restore"),
   closeWindow: () => ipcRenderer.invoke("window:close"),
   quitApp: () => ipcRenderer.invoke("app:quit")
 };

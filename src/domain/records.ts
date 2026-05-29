@@ -1,9 +1,19 @@
 import type { WorkdayRecord } from "../types/workshift";
-import { elapsedMinutes } from "./time";
+import { elapsedMinutes, formatDuration } from "./time";
 
 export type WeeklyTotal = {
   weekLabel: string;
   minutes: number;
+};
+
+export type WorkdayLogRow = {
+  date: string;
+  day: string;
+  weekday: string;
+  time: string;
+  total: string;
+  badge: string;
+  tone: "success" | "warning" | "danger" | "muted";
 };
 
 function isInMonth(record: WorkdayRecord, month: string): boolean {
@@ -71,4 +81,73 @@ export function weeklyTotals(records: WorkdayRecord[], month: string): WeeklyTot
       weekLabel: `Tuần ${week}`,
       minutes
     }));
+}
+
+function localDateFromKey(date: string): Date {
+  return new Date(`${date}T00:00:00`);
+}
+
+function localTimeLabel(value: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(value));
+}
+
+function weekdayLabel(date: string): string {
+  return new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(localDateFromKey(date));
+}
+
+export function workdayLogRows(
+  records: WorkdayRecord[],
+  month: string,
+  now: Date
+): WorkdayLogRow[] {
+  return records
+    .filter((record) => isInMonth(record, month))
+    .sort((left, right) => right.date.localeCompare(left.date))
+    .map((record) => {
+      const day = record.date.slice(8, 10);
+
+      if (record.isDayOff) {
+        return {
+          date: record.date,
+          day,
+          weekday: weekdayLabel(record.date),
+          time: "Day off",
+          total: "-",
+          badge: "Day off",
+          tone: "muted"
+        };
+      }
+
+      if (!record.checkInAt) {
+        return {
+          date: record.date,
+          day,
+          weekday: weekdayLabel(record.date),
+          time: "Not started",
+          total: "-",
+          badge: "Idle",
+          tone: "muted"
+        };
+      }
+
+      const minutes = elapsedMinutes(record, now);
+      const checkIn = localTimeLabel(record.checkInAt);
+      const checkOut = record.checkOutAt ? localTimeLabel(record.checkOutAt) : "Working";
+      const isComplete = minutes >= record.targetMinutes;
+      const isWorking = !record.checkOutAt;
+
+      return {
+        date: record.date,
+        day,
+        weekday: weekdayLabel(record.date),
+        time: `${checkIn} -> ${checkOut}`,
+        total: formatDuration(minutes),
+        badge: isWorking ? "Working" : isComplete ? "Full" : "Short",
+        tone: isWorking ? "warning" : isComplete ? "success" : "danger"
+      };
+    });
 }

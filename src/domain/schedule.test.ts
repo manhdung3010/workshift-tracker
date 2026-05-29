@@ -1,0 +1,107 @@
+import { describe, expect, it } from "vitest";
+import type { WorkdayRecord, WorkshiftSettings } from "../types/workshift";
+import {
+  effectiveWorkMinutes,
+  isInLunchBreak,
+  shouldRemindToStart
+} from "./schedule";
+
+const settings: WorkshiftSettings = {
+  targetMinutes: 480,
+  startAtLogin: true,
+  showWidget: true,
+  notifyOnComplete: true,
+  notifyStartReminder: true,
+  startReminderIntervalMinutes: 5,
+  workStartTime: "09:00",
+  workEndTime: "18:00",
+  lunchStartTime: "12:00",
+  lunchEndTime: "13:00",
+  workdays: [1, 2, 3, 4, 5]
+};
+
+function record(overrides: Partial<WorkdayRecord>): WorkdayRecord {
+  return {
+    date: "2026-05-29",
+    targetMinutes: 480,
+    note: "",
+    isDayOff: false,
+    isOvertime: false,
+    ...overrides
+  };
+}
+
+describe("effectiveWorkMinutes", () => {
+  it("subtracts lunch time from the configured work window", () => {
+    expect(effectiveWorkMinutes(settings)).toBe(480);
+  });
+});
+
+describe("isInLunchBreak", () => {
+  it("detects time inside the configured lunch break", () => {
+    expect(isInLunchBreak(settings, new Date("2026-05-29T05:30:00.000Z"))).toBe(true);
+    expect(isInLunchBreak(settings, new Date("2026-05-29T04:30:00.000Z"))).toBe(false);
+  });
+});
+
+describe("shouldRemindToStart", () => {
+  it("reminds during working time when today has not started", () => {
+    expect(
+      shouldRemindToStart({
+        settings,
+        todayRecord: undefined,
+        now: new Date("2026-05-29T02:15:00.000Z"),
+        lastReminderAt: undefined
+      })
+    ).toBe(true);
+  });
+
+  it("does not remind during lunch, outside workdays, or after start", () => {
+    expect(
+      shouldRemindToStart({
+        settings,
+        todayRecord: undefined,
+        now: new Date("2026-05-29T05:15:00.000Z"),
+        lastReminderAt: undefined
+      })
+    ).toBe(false);
+
+    expect(
+      shouldRemindToStart({
+        settings,
+        todayRecord: undefined,
+        now: new Date("2026-05-30T02:15:00.000Z"),
+        lastReminderAt: undefined
+      })
+    ).toBe(false);
+
+    expect(
+      shouldRemindToStart({
+        settings,
+        todayRecord: record({ checkInAt: "2026-05-29T02:00:00.000Z" }),
+        now: new Date("2026-05-29T02:15:00.000Z"),
+        lastReminderAt: undefined
+      })
+    ).toBe(false);
+  });
+
+  it("waits for the configured interval before reminding again", () => {
+    expect(
+      shouldRemindToStart({
+        settings,
+        todayRecord: undefined,
+        now: new Date("2026-05-29T02:04:59.000Z"),
+        lastReminderAt: new Date("2026-05-29T02:00:00.000Z")
+      })
+    ).toBe(false);
+
+    expect(
+      shouldRemindToStart({
+        settings,
+        todayRecord: undefined,
+        now: new Date("2026-05-29T02:05:00.000Z"),
+        lastReminderAt: new Date("2026-05-29T02:00:00.000Z")
+      })
+    ).toBe(true);
+  });
+});

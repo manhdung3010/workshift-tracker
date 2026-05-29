@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WorkdayRecord, WorkshiftSettings } from "../src/types/workshift";
 import { createShiftStore } from "./storage/shiftStore";
-import { closeAppWindow, minimizeAppWindow } from "./windowControls";
+import { compactAppWindow, restoreAppWindow } from "./windowControls";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +25,9 @@ function getControlWindow(eventSender: Electron.WebContents): BrowserWindow | nu
 
 function registerIpcHandlers(): void {
   const store = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  app.setLoginItemSettings({
+    openAtLogin: store.getState().settings.startAtLogin
+  });
 
   ipcMain.handle("workshift:get-state", () => store.getState());
   ipcMain.handle("workshift:check-in", (_event, nowIso: string) => store.checkIn(nowIso));
@@ -34,16 +37,30 @@ function registerIpcHandlers(): void {
   );
   ipcMain.handle(
     "workshift:update-settings",
-    (_event, settingsPatch: Partial<WorkshiftSettings>) =>
-      store.updateSettings(settingsPatch)
+    (_event, settingsPatch: Partial<WorkshiftSettings>) => {
+      const nextState = store.updateSettings(settingsPatch);
+
+      if (settingsPatch.startAtLogin !== undefined) {
+        app.setLoginItemSettings({
+          openAtLogin: settingsPatch.startAtLogin
+        });
+      }
+
+      return nextState;
+    }
   );
   ipcMain.handle("window:minimize", (event) => {
-    const result = minimizeAppWindow(getControlWindow(event.sender));
+    const result = compactAppWindow(getControlWindow(event.sender));
     console.info("[window:minimize]", result);
     return result;
   });
+  ipcMain.handle("window:restore", (event) => {
+    const result = restoreAppWindow(getControlWindow(event.sender));
+    console.info("[window:restore]", result);
+    return result;
+  });
   ipcMain.handle("window:close", (event) => {
-    const result = minimizeAppWindow(getControlWindow(event.sender));
+    const result = compactAppWindow(getControlWindow(event.sender));
     console.info("[window:close]", result);
     return result;
   });
