@@ -1,0 +1,241 @@
+import { app, Menu, BrowserWindow, ipcMain, nativeImage, Tray } from "electron";
+import path, { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { format } from "date-fns";
+import __cjs_mod__ from "node:module";
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
+const require2 = __cjs_mod__.createRequire(import.meta.url);
+const DEFAULT_SETTINGS = {
+  targetMinutes: 480,
+  startAtLogin: true,
+  showWidget: true,
+  notifyOnComplete: true
+};
+function localDateKey(nowIso) {
+  return format(new Date(nowIso), "yyyy-MM-dd");
+}
+function defaultState() {
+  return {
+    settings: DEFAULT_SETTINGS,
+    records: []
+  };
+}
+function normalizeState(input) {
+  return {
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...input.settings ?? {}
+    },
+    records: input.records ?? []
+  };
+}
+function createShiftStore(filePath) {
+  function readState() {
+    if (!existsSync(filePath)) {
+      return defaultState();
+    }
+    const raw = readFileSync(filePath, "utf8");
+    return normalizeState(JSON.parse(raw));
+  }
+  function writeState(state) {
+    mkdirSync(dirname(filePath), { recursive: true });
+    writeFileSync(filePath, `${JSON.stringify(state, null, 2)}
+`, "utf8");
+    return state;
+  }
+  function upsertRecord(record) {
+    const state = readState();
+    const existingIndex = state.records.findIndex((item) => item.date === record.date);
+    const records = existingIndex >= 0 ? state.records.map((item, index) => index === existingIndex ? record : item) : [...state.records, record];
+    return writeState({
+      ...state,
+      records: records.sort((left, right) => left.date.localeCompare(right.date))
+    });
+  }
+  return {
+    getState() {
+      return readState();
+    },
+    checkIn(nowIso) {
+      const state = readState();
+      const today = localDateKey(nowIso);
+      const existing = state.records.find((record) => record.date === today);
+      if (existing?.checkOutAt) {
+        return state;
+      }
+      return upsertRecord({
+        date: today,
+        targetMinutes: state.settings.targetMinutes,
+        note: "",
+        isDayOff: false,
+        isOvertime: false,
+        ...existing,
+        checkInAt: nowIso,
+        checkOutAt: void 0
+      });
+    },
+    checkOut(nowIso) {
+      const state = readState();
+      const today = localDateKey(nowIso);
+      const existing = state.records.find((record) => record.date === today);
+      if (!existing?.checkInAt) {
+        return state;
+      }
+      return upsertRecord({
+        ...existing,
+        checkOutAt: nowIso
+      });
+    },
+    updateRecord(record) {
+      return upsertRecord(record);
+    },
+    updateSettings(settingsPatch) {
+      const state = readState();
+      return writeState({
+        ...state,
+        settings: {
+          ...state.settings,
+          ...settingsPatch
+        }
+      });
+    }
+  };
+}
+function minimizeAppWindow(targetWindow) {
+  if (!targetWindow || targetWindow.isDestroyed()) {
+    return { ok: false, action: "none", reason: "window-not-found" };
+  }
+  targetWindow.hide();
+  return { ok: true, action: "hide", reason: "sent-to-tray" };
+}
+function closeAppWindow(targetWindow) {
+  if (!targetWindow || targetWindow.isDestroyed()) {
+    return { ok: false, action: "none", reason: "window-not-found" };
+  }
+  targetWindow.close();
+  return { ok: true, action: "close" };
+}
+const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
+let mainWindow = null;
+let tray = null;
+let isQuitting = false;
+app.disableHardwareAcceleration();
+function getControlWindow(eventSender) {
+  return BrowserWindow.getFocusedWindow() ?? BrowserWindow.fromWebContents(eventSender) ?? mainWindow ?? BrowserWindow.getAllWindows().find((window) => !window.isDestroyed()) ?? null;
+}
+function registerIpcHandlers() {
+  const store = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  ipcMain.handle("workshift:get-state", () => store.getState());
+  ipcMain.handle("workshift:check-in", (_event, nowIso) => store.checkIn(nowIso));
+  ipcMain.handle("workshift:check-out", (_event, nowIso) => store.checkOut(nowIso));
+  ipcMain.handle(
+    "workshift:update-record",
+    (_event, record) => store.updateRecord(record)
+  );
+  ipcMain.handle(
+    "workshift:update-settings",
+    (_event, settingsPatch) => store.updateSettings(settingsPatch)
+  );
+  ipcMain.handle("window:minimize", (event) => {
+    const result = minimizeAppWindow(getControlWindow(event.sender));
+    console.info("[window:minimize]", result);
+    return result;
+  });
+  ipcMain.handle("window:close", (event) => {
+    isQuitting = true;
+    const result = closeAppWindow(getControlWindow(event.sender));
+    console.info("[window:close]", result);
+    return result;
+  });
+}
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createMainWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.show();
+  mainWindow.focus();
+}
+function createTray() {
+  if (tray) {
+    return;
+  }
+  const trayIcon = nativeImage.createFromDataURL(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIUlEQVR4AWNggID/DBgYGIY1gGE0DBqG0TBoGEYAQicCHyCD2rgAAAAASUVORK5CYII="
+  );
+  tray = new Tray(trayIcon);
+  tray.setToolTip("WorkShift Tracker");
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Show WorkShift Tracker",
+        click: showMainWindow
+      },
+      {
+        label: "Quit",
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        }
+      }
+    ])
+  );
+  tray.on("click", showMainWindow);
+}
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 444,
+    height: 760,
+    minWidth: 380,
+    minHeight: 680,
+    frame: false,
+    minimizable: true,
+    show: false,
+    title: "WorkShift Tracker",
+    backgroundColor: "#f6f7f9",
+    webPreferences: {
+      preload: path.join(__dirname$1, "../preload/preload.mjs"),
+      contextIsolation: true,
+      sandbox: false,
+      nodeIntegration: false
+    }
+  });
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
+  mainWindow.setMenuBarVisibility(false);
+  if (process.env.ELECTRON_RENDERER_URL) {
+    void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    void mainWindow.loadFile(path.join(__dirname$1, "../renderer/index.html"));
+  }
+  mainWindow.webContents.once("did-finish-load", () => {
+    void mainWindow?.webContents.executeJavaScript("Boolean(window.workshift)", true).then((hasBridge) => {
+      console.info("[preload] workshift bridge", hasBridge ? "ready" : "missing");
+    });
+  });
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+}
+app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
+  registerIpcHandlers();
+  createTray();
+  createMainWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow();
+    }
+  });
+});
+app.on("window-all-closed", () => {
+  if (isQuitting && process.platform !== "darwin") {
+    app.quit();
+  }
+});
