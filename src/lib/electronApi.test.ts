@@ -41,4 +41,18 @@ describe("workshiftApi", () => {
 
     expect(close).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps the Electron quit API for the tray Quit menu", async () => {
+    const quitApp = vi.fn().mockResolvedValue({ ok: true, action: "quit" });
+
+    vi.stubGlobal("window", {
+      workshift: {
+        quitApp
+      }
+    });
+
+    await workshiftApi.quitApp();
+
+    expect(quitApp).toHaveBeenCalledTimes(1);
+  });
 });

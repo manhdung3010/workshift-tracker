@@ -14191,6 +14191,14 @@ const workshiftApi = {
     }
     globalThis.window?.close?.();
     return Promise.resolve({ ok: true, action: "close" });
+  },
+  quitApp() {
+    const electronApi = getElectronApi();
+    if (electronApi) {
+      return electronApi.quitApp();
+    }
+    globalThis.window?.close?.();
+    return Promise.resolve({ ok: true, action: "close" });
   }
 };
 const sampleLogs = [
@@ -14287,7 +14295,7 @@ function App() {
   function handleClose(event) {
     event.preventDefault();
     event.stopPropagation();
-    void workshiftApi.closeWindow();
+    void workshiftApi.minimizeWindow();
   }
   async function handleCheckIn() {
     setShowEarlyWarning(false);

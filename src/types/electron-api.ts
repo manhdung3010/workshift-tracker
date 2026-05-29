@@ -2,7 +2,7 @@ import type { WorkdayRecord, WorkshiftSettings, WorkshiftState } from "./workshi
 
 export type WindowControlResult = {
   ok: boolean;
-  action: "minimize" | "hide" | "close" | "none";
+  action: "minimize" | "hide" | "close" | "quit" | "none";
   reason?: string;
 };
 
@@ -15,4 +15,5 @@ export type WorkshiftApi = {
   updateSettings(settingsPatch: Partial<WorkshiftSettings>): Promise<WorkshiftState>;
   minimizeWindow(): Promise<WindowControlResult>;
   closeWindow(): Promise<WindowControlResult>;
+  quitApp(): Promise<WindowControlResult>;
 };

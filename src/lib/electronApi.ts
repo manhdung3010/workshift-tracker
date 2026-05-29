@@ -166,5 +166,16 @@ export const workshiftApi = {
 
     globalThis.window?.close?.();
     return Promise.resolve({ ok: true, action: "close" });
+  },
+
+  quitApp() {
+    const electronApi = getElectronApi();
+
+    if (electronApi) {
+      return electronApi.quitApp();
+    }
+
+    globalThis.window?.close?.();
+    return Promise.resolve({ ok: true, action: "close" });
   }
 };

@@ -43,11 +43,29 @@ function registerIpcHandlers(): void {
     return result;
   });
   ipcMain.handle("window:close", (event) => {
-    isQuitting = true;
-    const result = closeAppWindow(getControlWindow(event.sender));
+    const result = minimizeAppWindow(getControlWindow(event.sender));
     console.info("[window:close]", result);
     return result;
   });
+  ipcMain.handle("app:quit", () => {
+    console.info("[app:quit]");
+    quitApp();
+    return { ok: true, action: "quit" };
+  });
+}
+
+function quitApp(): void {
+  isQuitting = true;
+  tray?.destroy();
+  tray = null;
+
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) {
+      window.destroy();
+    }
+  }
+
+  app.exit(0);
 }
 
 function showMainWindow(): void {
@@ -70,7 +88,7 @@ function createTray(): void {
   }
 
   const trayIcon = nativeImage.createFromDataURL(
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIUlEQVR4AWNggID/DBgYGIY1gGE0DBqG0TBoGEYAQicCHyCD2rgAAAAASUVORK5CYII="
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAXklEQVR42u3WUQoAEAyA4Z3Pq8M6Hu8KI8P0Ky+bra9MkRhSvrkFAAAArUS9Zhtr6wEAAOAHoGm2UuMHUMd6581m4DqghRjFzAC9uzZ9hppB+xuwI/8+gD8hAACnAAUZxJvx1iSzfgAAAABJRU5ErkJggg=="
   );
 
   tray = new Tray(trayIcon);
@@ -83,10 +101,7 @@ function createTray(): void {
       },
       {
         label: "Quit",
-        click: () => {
-          isQuitting = true;
-          app.quit();
-        }
+        click: quitApp
       }
     ])
   );
@@ -148,6 +163,10 @@ app.whenReady().then(() => {
       createMainWindow();
     }
   });
+});
+
+app.on("before-quit", () => {
+  isQuitting = true;
 });
 
 app.on("window-all-closed", () => {

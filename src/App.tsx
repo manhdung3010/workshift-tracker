@@ -134,7 +134,7 @@ export function App(): React.JSX.Element {
   function handleClose(event: React.MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
     event.stopPropagation();
-    void workshiftApi.closeWindow();
+    void workshiftApi.minimizeWindow();
   }
 
   async function handleCheckIn(): Promise<void> {

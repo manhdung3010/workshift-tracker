@@ -7,7 +7,8 @@ const api = {
   updateRecord: (record) => ipcRenderer.invoke("workshift:update-record", record),
   updateSettings: (settingsPatch) => ipcRenderer.invoke("workshift:update-settings", settingsPatch),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
-  closeWindow: () => ipcRenderer.invoke("window:close")
+  closeWindow: () => ipcRenderer.invoke("window:close"),
+  quitApp: () => ipcRenderer.invoke("app:quit")
 };
 contextBridge.exposeInMainWorld("workshift", api);
 console.info("[preload] workshift bridge exposed");
