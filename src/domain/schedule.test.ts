@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WorkdayRecord, WorkshiftSettings } from "../types/workshift";
 import {
   effectiveWorkMinutes,
+  estimatedShiftEndTime,
   isInLunchBreak,
   shouldRemindToStart
 } from "./schedule";
@@ -34,6 +35,28 @@ function record(overrides: Partial<WorkdayRecord>): WorkdayRecord {
 describe("effectiveWorkMinutes", () => {
   it("subtracts lunch time from the configured work window", () => {
     expect(effectiveWorkMinutes(settings)).toBe(480);
+  });
+});
+
+describe("estimatedShiftEndTime", () => {
+  it("adds lunch time when the required work period crosses lunch", () => {
+    expect(
+      estimatedShiftEndTime({
+        settings,
+        checkInAt: new Date(2026, 4, 29, 9, 0),
+        targetMinutes: 480
+      })
+    ).toEqual(new Date(2026, 4, 29, 18, 0));
+  });
+
+  it("resumes work after lunch when the target would end inside lunch", () => {
+    expect(
+      estimatedShiftEndTime({
+        settings,
+        checkInAt: new Date(2026, 4, 29, 9, 0),
+        targetMinutes: 181
+      })
+    ).toEqual(new Date(2026, 4, 29, 13, 1));
   });
 });
 

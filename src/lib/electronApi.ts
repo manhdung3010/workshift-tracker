@@ -114,6 +114,17 @@ const browserFallbackApi = {
     return Promise.resolve(updateBrowserRecord(record));
   },
 
+  deleteRecord(date: string): Promise<WorkshiftState> {
+    const state = readBrowserState();
+
+    return Promise.resolve(
+      writeBrowserState({
+        ...state,
+        records: state.records.filter((record) => record.date !== date)
+      })
+    );
+  },
+
   updateSettings(settingsPatch: Partial<WorkshiftSettings>): Promise<WorkshiftState> {
     const state = readBrowserState();
 
@@ -144,6 +155,13 @@ export const workshiftApi = {
 
   updateRecord(record: WorkdayRecord) {
     return getElectronApi()?.updateRecord(record) ?? browserFallbackApi.updateRecord(record);
+  },
+
+  deleteRecord(date: string) {
+    const electronApi = getElectronApi();
+    return electronApi?.deleteRecord
+      ? electronApi.deleteRecord(date)
+      : browserFallbackApi.deleteRecord(date);
   },
 
   updateSettings(settingsPatch: Partial<WorkshiftSettings>) {

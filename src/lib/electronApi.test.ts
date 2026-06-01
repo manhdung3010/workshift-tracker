@@ -49,6 +49,36 @@ describe("workshiftApi", () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it("does not crash when an older Electron preload API is missing deleteRecord", async () => {
+    vi.stubGlobal("window", {
+      workshift: {},
+      localStorage: {
+        value: JSON.stringify({
+          records: [
+            {
+              date: "2026-05-29",
+              checkInAt: "2026-05-29T01:00:00.000Z",
+              targetMinutes: 480,
+              note: "",
+              isDayOff: false,
+              isOvertime: false
+            }
+          ]
+        }),
+        getItem() {
+          return this.value;
+        },
+        setItem(_key: string, value: string) {
+          this.value = value;
+        }
+      }
+    });
+
+    await expect(workshiftApi.deleteRecord("2026-05-29")).resolves.toMatchObject({
+      records: []
+    });
+  });
+
   it("keeps the Electron quit API for the tray Quit menu", async () => {
     const quitApp = vi.fn().mockResolvedValue({ ok: true, action: "quit" });
 

@@ -1,5 +1,13 @@
 import type { ShiftStatus, WorkdayRecord } from "../types/workshift";
 
+export function dateWithTime(now: Date, timeValue: string): Date {
+  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
+  const selected = new Date(now);
+  selected.setHours(Number(hoursValue), Number(minutesValue), 0, 0);
+
+  return selected.getTime() > now.getTime() ? new Date(now) : selected;
+}
+
 export function elapsedMinutes(record: WorkdayRecord, now: Date): number {
   if (!record.checkInAt) {
     return 0;

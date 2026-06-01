@@ -7,6 +7,7 @@ const api: WorkshiftApi = {
   checkIn: (nowIso) => ipcRenderer.invoke("workshift:check-in", nowIso),
   checkOut: (nowIso) => ipcRenderer.invoke("workshift:check-out", nowIso),
   updateRecord: (record) => ipcRenderer.invoke("workshift:update-record", record),
+  deleteRecord: (date) => ipcRenderer.invoke("workshift:delete-record", date),
   updateSettings: (settingsPatch) =>
     ipcRenderer.invoke("workshift:update-settings", settingsPatch),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),

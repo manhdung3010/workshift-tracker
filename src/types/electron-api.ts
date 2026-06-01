@@ -12,6 +12,7 @@ export type WorkshiftApi = {
   checkIn(nowIso: string): Promise<WorkshiftState>;
   checkOut(nowIso: string): Promise<WorkshiftState>;
   updateRecord(record: WorkdayRecord): Promise<WorkshiftState>;
+  deleteRecord(date: string): Promise<WorkshiftState>;
   updateSettings(settingsPatch: Partial<WorkshiftSettings>): Promise<WorkshiftState>;
   minimizeWindow(): Promise<WindowControlResult>;
   restoreWindow(): Promise<WindowControlResult>;

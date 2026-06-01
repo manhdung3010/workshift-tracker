@@ -10,11 +10,13 @@ import {
   IconHome,
   IconLogin2,
   IconMinus,
+  IconPencil,
   IconPlayerPlay,
   IconSettings,
   IconSpeakerphone,
   IconTableExport,
   IconTimelineEvent,
+  IconTrash,
   IconLogout2,
   IconX,
   IconWindowMinimize
@@ -22,8 +24,8 @@ import {
 import { addMonths, format, isSameMonth, subMonths } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { workdayLogRows } from "./domain/records";
-import { effectiveWorkMinutes, shouldRemindToStart } from "./domain/schedule";
-import { elapsedMinutes, formatDuration, progressRatio, shiftStatus } from "./domain/time";
+import { effectiveWorkMinutes, estimatedShiftEndTime, shouldRemindToStart } from "./domain/schedule";
+import { dateWithTime, elapsedMinutes, formatDuration, progressRatio, shiftStatus } from "./domain/time";
 import { workshiftApi } from "./lib/electronApi";
 import type { WorkdayRecord, WorkshiftSettings, WorkshiftState } from "./types/workshift";
 
@@ -101,6 +103,9 @@ export function App(): React.JSX.Element {
   const [now, setNow] = useState(() => new Date());
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const [showEarlyWarning, setShowEarlyWarning] = useState(false);
+  const [showDeleteTodayConfirm, setShowDeleteTodayConfirm] = useState(false);
+  const [showStartTimeModal, setShowStartTimeModal] = useState(false);
+  const [manualStartTime, setManualStartTime] = useState(() => format(new Date(), "HH:mm"));
   const [isCompact, setIsCompact] = useState(false);
   const lastStartReminderAt = useRef<Date | undefined>(undefined);
   const completedNotificationDate = useRef<string | undefined>(undefined);
@@ -122,6 +127,7 @@ export function App(): React.JSX.Element {
   }, [now, state]);
 
   const status = shiftStatus(todayRecord, now);
+  const settings = state?.settings;
   const elapsed = todayRecord ? elapsedMinutes(todayRecord, now) : 0;
   const target = todayRecord?.targetMinutes ?? state?.settings.targetMinutes ?? 480;
   const progressPercent = Math.round(progressRatio(todayRecord, now) * 100);
@@ -132,8 +138,15 @@ export function App(): React.JSX.Element {
   const canEndNormally = status === "completed";
   const isWorking = status === "working" || status === "completed";
   const checkInLabel = todayRecord?.checkInAt ? format(new Date(todayRecord.checkInAt), "HH:mm") : "--:--";
-  const estimatedEnd = todayRecord?.checkInAt
-    ? format(new Date(new Date(todayRecord.checkInAt).getTime() + target * 60_000), "HH:mm")
+  const estimatedEnd = todayRecord?.checkInAt && settings
+    ? format(
+        estimatedShiftEndTime({
+          settings,
+          checkInAt: new Date(todayRecord.checkInAt),
+          targetMinutes: target
+        }),
+        "HH:mm"
+      )
     : "--:--";
   const monthRecords = state?.records.filter((record) => isSameMonth(new Date(record.date), selectedMonth)) ?? [];
   const monthlyMinutes = monthRecords.reduce(
@@ -143,7 +156,6 @@ export function App(): React.JSX.Element {
   const logRows = workdayLogRows(state?.records ?? [], format(selectedMonth, "yyyy-MM"), now);
   const completedLogCount = logRows.filter((row) => row.badge === "Full").length;
   const shortLogCount = logRows.filter((row) => row.badge === "Short").length;
-  const settings = state?.settings;
   const effectiveMinutes = settings ? effectiveWorkMinutes(settings) : 0;
   const targetHours = settings ? targetHoursValue(settings.targetMinutes) : "8";
 
@@ -196,8 +208,35 @@ export function App(): React.JSX.Element {
 
   async function handleCheckIn(): Promise<void> {
     setShowEarlyWarning(false);
+    setShowStartTimeModal(false);
     setState(await workshiftApi.checkIn());
     setNow(new Date());
+  }
+
+  async function handleManualCheckIn(): Promise<void> {
+    const startAt = dateWithTime(new Date(), manualStartTime);
+    setShowEarlyWarning(false);
+    setShowStartTimeModal(false);
+    setState(await workshiftApi.checkIn(startAt));
+    setNow(new Date());
+  }
+
+  async function handleDeleteTodayLog(): Promise<void> {
+    if (!todayRecord) {
+      return;
+    }
+
+    setShowDeleteTodayConfirm(false);
+    setShowEarlyWarning(false);
+    setShowStartTimeModal(false);
+    setState(await workshiftApi.deleteRecord(todayRecord.date));
+    setNow(new Date());
+  }
+
+  function handleOpenStartTimeModal(): void {
+    setShowDeleteTodayConfirm(false);
+    setManualStartTime(format(new Date(), "HH:mm"));
+    setShowStartTimeModal(true);
   }
 
   async function handleRestoreWindow(): Promise<void> {
@@ -223,6 +262,10 @@ export function App(): React.JSX.Element {
 
   async function handleSettingsPatch(settingsPatch: Partial<WorkshiftSettings>): Promise<void> {
     setState(await workshiftApi.updateSettings(settingsPatch));
+  }
+
+  function handleTestNotification(): void {
+    notify("WorkShift test", "Notifications are working on this device.");
   }
 
   function handleWorkdayToggle(day: number): void {
@@ -387,6 +430,40 @@ export function App(): React.JSX.Element {
               <span>{isWorking ? "SHIFT ON" : "START SHIFT"}</span>
             </button>
 
+            {canCheckIn && (
+              <button
+                className="manual-start-button"
+                type="button"
+                onClick={handleOpenStartTimeModal}
+              >
+                <IconPencil size={16} />
+                Choose start time
+              </button>
+            )}
+
+            {showStartTimeModal && canCheckIn && (
+              <div className="warning-modal start-time-modal" role="dialog" aria-label="Choose start time">
+                <strong>Choose start time</strong>
+                <label>
+                  <span>Start time</span>
+                  <input
+                    type="time"
+                    value={manualStartTime}
+                    max={format(now, "HH:mm")}
+                    onChange={(event) => setManualStartTime(event.target.value)}
+                  />
+                </label>
+                <div className="modal-actions">
+                  <button type="button" onClick={() => setShowStartTimeModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={() => void handleManualCheckIn()}>
+                    Start
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="progress-block">
               <div className="progress-label">
                 <span>
@@ -440,6 +517,37 @@ export function App(): React.JSX.Element {
               </div>
             )}
 
+            {todayRecord && (
+              <>
+                <button
+                  className="delete-log-button"
+                  type="button"
+                  onClick={() => {
+                    setShowEarlyWarning(false);
+                    setShowDeleteTodayConfirm(true);
+                  }}
+                >
+                  <IconTrash size={16} />
+                  Delete today log
+                </button>
+
+                {showDeleteTodayConfirm && (
+                  <div className="warning-modal delete-log-modal" role="dialog" aria-label="Delete today log">
+                    <strong>Delete today log?</strong>
+                    <p>This will remove today's check-in, checkout, and total time.</p>
+                    <div className="modal-actions">
+                      <button type="button" onClick={() => setShowDeleteTodayConfirm(false)}>
+                        Cancel
+                      </button>
+                      <button type="button" onClick={() => void handleDeleteTodayLog()}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
             <button
               className="end-button"
               type="button"
@@ -466,6 +574,7 @@ export function App(): React.JSX.Element {
                 </div>
               </div>
             )}
+
           </section>
         )}
 
@@ -657,6 +766,16 @@ export function App(): React.JSX.Element {
                       <span>min</span>
                     </div>
                   </label>
+                  <div className="settings-actions notification-actions">
+                    <button
+                      className="toolbar-button"
+                      type="button"
+                      onClick={handleTestNotification}
+                    >
+                      <IconBell size={16} />
+                      Test notification
+                    </button>
+                  </div>
                 </div>
 
                 <div className="settings-group">
@@ -701,7 +820,7 @@ export function App(): React.JSX.Element {
               </>
             )}
 
-            <div className="settings-note">
+            <div className="settings-note" style={{ marginTop: "1em" }}>
               <IconSpeakerphone size={16} />
               Local-only data storage
             </div>

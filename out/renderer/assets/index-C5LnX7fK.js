@@ -12501,40 +12501,44 @@ const createReactComponent = (type, iconName, iconNamePascal, iconNode) => {
   Component.displayName = `${iconNamePascal}`;
   return Component;
 };
-const __iconNode$i = [["path", { "d": "M16 4l4 0l0 4", "key": "svg-0" }], ["path", { "d": "M14 10l6 -6", "key": "svg-1" }], ["path", { "d": "M8 20l-4 0l0 -4", "key": "svg-2" }], ["path", { "d": "M4 20l6 -6", "key": "svg-3" }], ["path", { "d": "M16 20l4 0l0 -4", "key": "svg-4" }], ["path", { "d": "M14 14l6 6", "key": "svg-5" }], ["path", { "d": "M8 4l-4 0l0 4", "key": "svg-6" }], ["path", { "d": "M4 4l6 6", "key": "svg-7" }]];
-const IconArrowsMaximize = createReactComponent("outline", "arrows-maximize", "ArrowsMaximize", __iconNode$i);
-const __iconNode$h = [["path", { "d": "M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6", "key": "svg-0" }], ["path", { "d": "M9 17v1a3 3 0 0 0 6 0v-1", "key": "svg-1" }]];
-const IconBell = createReactComponent("outline", "bell", "Bell", __iconNode$h);
-const __iconNode$g = [["path", { "d": "M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12", "key": "svg-0" }], ["path", { "d": "M16 3l0 4", "key": "svg-1" }], ["path", { "d": "M8 3l0 4", "key": "svg-2" }], ["path", { "d": "M4 11l16 0", "key": "svg-3" }], ["path", { "d": "M8 15h2v2h-2l0 -2", "key": "svg-4" }]];
-const IconCalendarEvent = createReactComponent("outline", "calendar-event", "CalendarEvent", __iconNode$g);
-const __iconNode$f = [["path", { "d": "M15 6l-6 6l6 6", "key": "svg-0" }]];
-const IconChevronLeft = createReactComponent("outline", "chevron-left", "ChevronLeft", __iconNode$f);
-const __iconNode$e = [["path", { "d": "M9 6l6 6l-6 6", "key": "svg-0" }]];
-const IconChevronRight = createReactComponent("outline", "chevron-right", "ChevronRight", __iconNode$e);
-const __iconNode$d = [["path", { "d": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0", "key": "svg-0" }], ["path", { "d": "M12 7v5l3 3", "key": "svg-1" }]];
-const IconClock = createReactComponent("outline", "clock", "Clock", __iconNode$d);
-const __iconNode$c = [["path", { "d": "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2", "key": "svg-0" }], ["path", { "d": "M7 11l5 5l5 -5", "key": "svg-1" }], ["path", { "d": "M12 4l0 12", "key": "svg-2" }]];
-const IconDownload = createReactComponent("outline", "download", "Download", __iconNode$c);
-const __iconNode$b = [["path", { "d": "M12 8l0 4l2 2", "key": "svg-0" }], ["path", { "d": "M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5", "key": "svg-1" }]];
-const IconHistory = createReactComponent("outline", "history", "History", __iconNode$b);
-const __iconNode$a = [["path", { "d": "M5 12l-2 0l9 -9l9 9l-2 0", "key": "svg-0" }], ["path", { "d": "M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7", "key": "svg-1" }], ["path", { "d": "M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6", "key": "svg-2" }]];
-const IconHome = createReactComponent("outline", "home", "Home", __iconNode$a);
-const __iconNode$9 = [["path", { "d": "M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2", "key": "svg-0" }], ["path", { "d": "M3 12h13l-3 -3", "key": "svg-1" }], ["path", { "d": "M13 15l3 -3", "key": "svg-2" }]];
-const IconLogin2 = createReactComponent("outline", "login-2", "Login2", __iconNode$9);
-const __iconNode$8 = [["path", { "d": "M10 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2", "key": "svg-0" }], ["path", { "d": "M15 12h-12l3 -3", "key": "svg-1" }], ["path", { "d": "M6 15l-3 -3", "key": "svg-2" }]];
-const IconLogout2 = createReactComponent("outline", "logout-2", "Logout2", __iconNode$8);
-const __iconNode$7 = [["path", { "d": "M5 12l14 0", "key": "svg-0" }]];
-const IconMinus = createReactComponent("outline", "minus", "Minus", __iconNode$7);
-const __iconNode$6 = [["path", { "d": "M7 4v16l13 -8l-13 -8", "key": "svg-0" }]];
-const IconPlayerPlay = createReactComponent("outline", "player-play", "PlayerPlay", __iconNode$6);
-const __iconNode$5 = [["path", { "d": "M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065", "key": "svg-0" }], ["path", { "d": "M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0", "key": "svg-1" }]];
-const IconSettings = createReactComponent("outline", "settings", "Settings", __iconNode$5);
-const __iconNode$4 = [["path", { "d": "M18 8a3 3 0 0 1 0 6", "key": "svg-0" }], ["path", { "d": "M10 8v11a1 1 0 0 1 -1 1h-1a1 1 0 0 1 -1 -1v-5", "key": "svg-1" }], ["path", { "d": "M12 8l4.524 -3.77a.9 .9 0 0 1 1.476 .692v12.156a.9 .9 0 0 1 -1.476 .692l-4.524 -3.77h-8a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h8", "key": "svg-2" }]];
-const IconSpeakerphone = createReactComponent("outline", "speakerphone", "Speakerphone", __iconNode$4);
-const __iconNode$3 = [["path", { "d": "M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5", "key": "svg-0" }], ["path", { "d": "M3 10h18", "key": "svg-1" }], ["path", { "d": "M10 3v18", "key": "svg-2" }], ["path", { "d": "M16 19h6", "key": "svg-3" }], ["path", { "d": "M19 16l3 3l-3 3", "key": "svg-4" }]];
-const IconTableExport = createReactComponent("outline", "table-export", "TableExport", __iconNode$3);
-const __iconNode$2 = [["path", { "d": "M10 20a2 2 0 1 0 4 0a2 2 0 1 0 -4 0", "key": "svg-0" }], ["path", { "d": "M10 20h-6", "key": "svg-1" }], ["path", { "d": "M14 20h6", "key": "svg-2" }], ["path", { "d": "M12 15l-2 -2h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h10a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-3l-2 2", "key": "svg-3" }]];
-const IconTimelineEvent = createReactComponent("outline", "timeline-event", "TimelineEvent", __iconNode$2);
+const __iconNode$k = [["path", { "d": "M16 4l4 0l0 4", "key": "svg-0" }], ["path", { "d": "M14 10l6 -6", "key": "svg-1" }], ["path", { "d": "M8 20l-4 0l0 -4", "key": "svg-2" }], ["path", { "d": "M4 20l6 -6", "key": "svg-3" }], ["path", { "d": "M16 20l4 0l0 -4", "key": "svg-4" }], ["path", { "d": "M14 14l6 6", "key": "svg-5" }], ["path", { "d": "M8 4l-4 0l0 4", "key": "svg-6" }], ["path", { "d": "M4 4l6 6", "key": "svg-7" }]];
+const IconArrowsMaximize = createReactComponent("outline", "arrows-maximize", "ArrowsMaximize", __iconNode$k);
+const __iconNode$j = [["path", { "d": "M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6", "key": "svg-0" }], ["path", { "d": "M9 17v1a3 3 0 0 0 6 0v-1", "key": "svg-1" }]];
+const IconBell = createReactComponent("outline", "bell", "Bell", __iconNode$j);
+const __iconNode$i = [["path", { "d": "M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12", "key": "svg-0" }], ["path", { "d": "M16 3l0 4", "key": "svg-1" }], ["path", { "d": "M8 3l0 4", "key": "svg-2" }], ["path", { "d": "M4 11l16 0", "key": "svg-3" }], ["path", { "d": "M8 15h2v2h-2l0 -2", "key": "svg-4" }]];
+const IconCalendarEvent = createReactComponent("outline", "calendar-event", "CalendarEvent", __iconNode$i);
+const __iconNode$h = [["path", { "d": "M15 6l-6 6l6 6", "key": "svg-0" }]];
+const IconChevronLeft = createReactComponent("outline", "chevron-left", "ChevronLeft", __iconNode$h);
+const __iconNode$g = [["path", { "d": "M9 6l6 6l-6 6", "key": "svg-0" }]];
+const IconChevronRight = createReactComponent("outline", "chevron-right", "ChevronRight", __iconNode$g);
+const __iconNode$f = [["path", { "d": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0", "key": "svg-0" }], ["path", { "d": "M12 7v5l3 3", "key": "svg-1" }]];
+const IconClock = createReactComponent("outline", "clock", "Clock", __iconNode$f);
+const __iconNode$e = [["path", { "d": "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2", "key": "svg-0" }], ["path", { "d": "M7 11l5 5l5 -5", "key": "svg-1" }], ["path", { "d": "M12 4l0 12", "key": "svg-2" }]];
+const IconDownload = createReactComponent("outline", "download", "Download", __iconNode$e);
+const __iconNode$d = [["path", { "d": "M12 8l0 4l2 2", "key": "svg-0" }], ["path", { "d": "M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5", "key": "svg-1" }]];
+const IconHistory = createReactComponent("outline", "history", "History", __iconNode$d);
+const __iconNode$c = [["path", { "d": "M5 12l-2 0l9 -9l9 9l-2 0", "key": "svg-0" }], ["path", { "d": "M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7", "key": "svg-1" }], ["path", { "d": "M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6", "key": "svg-2" }]];
+const IconHome = createReactComponent("outline", "home", "Home", __iconNode$c);
+const __iconNode$b = [["path", { "d": "M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2", "key": "svg-0" }], ["path", { "d": "M3 12h13l-3 -3", "key": "svg-1" }], ["path", { "d": "M13 15l3 -3", "key": "svg-2" }]];
+const IconLogin2 = createReactComponent("outline", "login-2", "Login2", __iconNode$b);
+const __iconNode$a = [["path", { "d": "M10 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2", "key": "svg-0" }], ["path", { "d": "M15 12h-12l3 -3", "key": "svg-1" }], ["path", { "d": "M6 15l-3 -3", "key": "svg-2" }]];
+const IconLogout2 = createReactComponent("outline", "logout-2", "Logout2", __iconNode$a);
+const __iconNode$9 = [["path", { "d": "M5 12l14 0", "key": "svg-0" }]];
+const IconMinus = createReactComponent("outline", "minus", "Minus", __iconNode$9);
+const __iconNode$8 = [["path", { "d": "M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4", "key": "svg-0" }], ["path", { "d": "M13.5 6.5l4 4", "key": "svg-1" }]];
+const IconPencil = createReactComponent("outline", "pencil", "Pencil", __iconNode$8);
+const __iconNode$7 = [["path", { "d": "M7 4v16l13 -8l-13 -8", "key": "svg-0" }]];
+const IconPlayerPlay = createReactComponent("outline", "player-play", "PlayerPlay", __iconNode$7);
+const __iconNode$6 = [["path", { "d": "M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065", "key": "svg-0" }], ["path", { "d": "M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0", "key": "svg-1" }]];
+const IconSettings = createReactComponent("outline", "settings", "Settings", __iconNode$6);
+const __iconNode$5 = [["path", { "d": "M18 8a3 3 0 0 1 0 6", "key": "svg-0" }], ["path", { "d": "M10 8v11a1 1 0 0 1 -1 1h-1a1 1 0 0 1 -1 -1v-5", "key": "svg-1" }], ["path", { "d": "M12 8l4.524 -3.77a.9 .9 0 0 1 1.476 .692v12.156a.9 .9 0 0 1 -1.476 .692l-4.524 -3.77h-8a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h8", "key": "svg-2" }]];
+const IconSpeakerphone = createReactComponent("outline", "speakerphone", "Speakerphone", __iconNode$5);
+const __iconNode$4 = [["path", { "d": "M12.5 21h-7.5a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5", "key": "svg-0" }], ["path", { "d": "M3 10h18", "key": "svg-1" }], ["path", { "d": "M10 3v18", "key": "svg-2" }], ["path", { "d": "M16 19h6", "key": "svg-3" }], ["path", { "d": "M19 16l3 3l-3 3", "key": "svg-4" }]];
+const IconTableExport = createReactComponent("outline", "table-export", "TableExport", __iconNode$4);
+const __iconNode$3 = [["path", { "d": "M10 20a2 2 0 1 0 4 0a2 2 0 1 0 -4 0", "key": "svg-0" }], ["path", { "d": "M10 20h-6", "key": "svg-1" }], ["path", { "d": "M14 20h6", "key": "svg-2" }], ["path", { "d": "M12 15l-2 -2h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h10a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-3l-2 2", "key": "svg-3" }]];
+const IconTimelineEvent = createReactComponent("outline", "timeline-event", "TimelineEvent", __iconNode$3);
+const __iconNode$2 = [["path", { "d": "M4 7l16 0", "key": "svg-0" }], ["path", { "d": "M10 11l0 6", "key": "svg-1" }], ["path", { "d": "M14 11l0 6", "key": "svg-2" }], ["path", { "d": "M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12", "key": "svg-3" }], ["path", { "d": "M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3", "key": "svg-4" }]];
+const IconTrash = createReactComponent("outline", "trash", "Trash", __iconNode$2);
 const __iconNode$1 = [["path", { "d": "M3 17a1 1 0 0 1 1 -1h3a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1l0 -3", "key": "svg-0" }], ["path", { "d": "M4 12v-6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-6", "key": "svg-1" }], ["path", { "d": "M15 13h-4v-4", "key": "svg-2" }], ["path", { "d": "M11 13l5 -5", "key": "svg-3" }]];
 const IconWindowMinimize = createReactComponent("outline", "window-minimize", "WindowMinimize", __iconNode$1);
 const __iconNode = [["path", { "d": "M18 6l-12 12", "key": "svg-0" }], ["path", { "d": "M6 6l12 12", "key": "svg-1" }]];
@@ -14057,6 +14061,12 @@ function isSameMonth(laterDate, earlierDate, options) {
 function subMonths(date, amount, options) {
   return addMonths(date, -1, options);
 }
+function dateWithTime(now, timeValue) {
+  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
+  const selected = new Date(now);
+  selected.setHours(Number(hoursValue), Number(minutesValue), 0, 0);
+  return selected.getTime() > now.getTime() ? new Date(now) : selected;
+}
 function elapsedMinutes(record, now) {
   if (!record.checkInAt) {
     return 0;
@@ -14160,10 +14170,48 @@ function dayNumber(now) {
 function minutesBetween(startTime, endTime) {
   return Math.max(0, minutesFromTime(endTime) - minutesFromTime(startTime));
 }
+function timeOnDate(date, value) {
+  const result = new Date(date);
+  const [hoursValue = "0", minutesValue = "0"] = value.split(":");
+  const hours = Number(hoursValue);
+  const minutes = Number(minutesValue);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
+}
 function effectiveWorkMinutes(settings) {
   const workMinutes = minutesBetween(settings.workStartTime, settings.workEndTime);
   const lunchMinutes = minutesBetween(settings.lunchStartTime, settings.lunchEndTime);
   return Math.max(0, workMinutes - lunchMinutes);
+}
+function estimatedShiftEndTime({
+  settings,
+  checkInAt,
+  targetMinutes
+}) {
+  const cursor = new Date(checkInAt);
+  let remainingMinutes = Math.max(0, targetMinutes);
+  const lunchStart = timeOnDate(cursor, settings.lunchStartTime);
+  const lunchEnd = timeOnDate(cursor, settings.lunchEndTime);
+  const hasLunchBreak = lunchEnd.getTime() > lunchStart.getTime();
+  while (remainingMinutes > 0) {
+    if (hasLunchBreak && cursor >= lunchStart && cursor < lunchEnd) {
+      cursor.setTime(lunchEnd.getTime());
+      continue;
+    }
+    if (hasLunchBreak && cursor < lunchStart) {
+      const minutesUntilLunch = Math.floor((lunchStart.getTime() - cursor.getTime()) / 6e4);
+      if (remainingMinutes <= minutesUntilLunch) {
+        cursor.setTime(cursor.getTime() + remainingMinutes * 6e4);
+        return cursor;
+      }
+      cursor.setTime(lunchStart.getTime());
+      remainingMinutes -= minutesUntilLunch;
+      continue;
+    }
+    cursor.setTime(cursor.getTime() + remainingMinutes * 6e4);
+    remainingMinutes = 0;
+  }
+  return cursor;
 }
 function isInLunchBreak(settings, now) {
   const current = localMinutes(now);
@@ -14281,6 +14329,15 @@ const browserFallbackApi = {
   updateRecord(record) {
     return Promise.resolve(updateBrowserRecord(record));
   },
+  deleteRecord(date) {
+    const state = readBrowserState();
+    return Promise.resolve(
+      writeBrowserState({
+        ...state,
+        records: state.records.filter((record) => record.date !== date)
+      })
+    );
+  },
   updateSettings(settingsPatch) {
     const state = readBrowserState();
     return Promise.resolve(
@@ -14306,6 +14363,10 @@ const workshiftApi = {
   },
   updateRecord(record) {
     return getElectronApi()?.updateRecord(record) ?? browserFallbackApi.updateRecord(record);
+  },
+  deleteRecord(date) {
+    const electronApi = getElectronApi();
+    return electronApi?.deleteRecord ? electronApi.deleteRecord(date) : browserFallbackApi.deleteRecord(date);
   },
   updateSettings(settingsPatch) {
     return getElectronApi()?.updateSettings(settingsPatch) ?? browserFallbackApi.updateSettings(settingsPatch);
@@ -14403,6 +14464,9 @@ function App() {
   const [now, setNow] = reactExports.useState(() => /* @__PURE__ */ new Date());
   const [selectedMonth, setSelectedMonth] = reactExports.useState(() => /* @__PURE__ */ new Date());
   const [showEarlyWarning, setShowEarlyWarning] = reactExports.useState(false);
+  const [showDeleteTodayConfirm, setShowDeleteTodayConfirm] = reactExports.useState(false);
+  const [showStartTimeModal, setShowStartTimeModal] = reactExports.useState(false);
+  const [manualStartTime, setManualStartTime] = reactExports.useState(() => format(/* @__PURE__ */ new Date(), "HH:mm"));
   const [isCompact, setIsCompact] = reactExports.useState(false);
   const lastStartReminderAt = reactExports.useRef(void 0);
   const completedNotificationDate = reactExports.useRef(void 0);
@@ -14419,6 +14483,7 @@ function App() {
     return state?.records.find((record) => record.date === todayKey(now));
   }, [now, state]);
   const status = shiftStatus(todayRecord, now);
+  const settings = state?.settings;
   const elapsed = todayRecord ? elapsedMinutes(todayRecord, now) : 0;
   const target = todayRecord?.targetMinutes ?? state?.settings.targetMinutes ?? 480;
   const progressPercent = Math.round(progressRatio(todayRecord, now) * 100);
@@ -14428,7 +14493,14 @@ function App() {
   const canEndNormally = status === "completed";
   const isWorking = status === "working" || status === "completed";
   const checkInLabel = todayRecord?.checkInAt ? format(new Date(todayRecord.checkInAt), "HH:mm") : "--:--";
-  const estimatedEnd = todayRecord?.checkInAt ? format(new Date(new Date(todayRecord.checkInAt).getTime() + target * 6e4), "HH:mm") : "--:--";
+  const estimatedEnd = todayRecord?.checkInAt && settings ? format(
+    estimatedShiftEndTime({
+      settings,
+      checkInAt: new Date(todayRecord.checkInAt),
+      targetMinutes: target
+    }),
+    "HH:mm"
+  ) : "--:--";
   const monthRecords = state?.records.filter((record) => isSameMonth(new Date(record.date), selectedMonth)) ?? [];
   const monthlyMinutes = monthRecords.reduce(
     (total, record) => total + elapsedMinutes(record, now),
@@ -14437,7 +14509,6 @@ function App() {
   const logRows = workdayLogRows(state?.records ?? [], format(selectedMonth, "yyyy-MM"), now);
   const completedLogCount = logRows.filter((row) => row.badge === "Full").length;
   const shortLogCount = logRows.filter((row) => row.badge === "Short").length;
-  const settings = state?.settings;
   const effectiveMinutes = settings ? effectiveWorkMinutes(settings) : 0;
   const targetHours = settings ? targetHoursValue(settings.targetMinutes) : "8";
   reactExports.useEffect(() => {
@@ -14481,8 +14552,31 @@ function App() {
   }
   async function handleCheckIn() {
     setShowEarlyWarning(false);
+    setShowStartTimeModal(false);
     setState(await workshiftApi.checkIn());
     setNow(/* @__PURE__ */ new Date());
+  }
+  async function handleManualCheckIn() {
+    const startAt = dateWithTime(/* @__PURE__ */ new Date(), manualStartTime);
+    setShowEarlyWarning(false);
+    setShowStartTimeModal(false);
+    setState(await workshiftApi.checkIn(startAt));
+    setNow(/* @__PURE__ */ new Date());
+  }
+  async function handleDeleteTodayLog() {
+    if (!todayRecord) {
+      return;
+    }
+    setShowDeleteTodayConfirm(false);
+    setShowEarlyWarning(false);
+    setShowStartTimeModal(false);
+    setState(await workshiftApi.deleteRecord(todayRecord.date));
+    setNow(/* @__PURE__ */ new Date());
+  }
+  function handleOpenStartTimeModal() {
+    setShowDeleteTodayConfirm(false);
+    setManualStartTime(format(/* @__PURE__ */ new Date(), "HH:mm"));
+    setShowStartTimeModal(true);
   }
   async function handleRestoreWindow() {
     setIsCompact(false);
@@ -14503,6 +14597,9 @@ function App() {
   }
   async function handleSettingsPatch(settingsPatch) {
     setState(await workshiftApi.updateSettings(settingsPatch));
+  }
+  function handleTestNotification() {
+    notify("WorkShift test", "Notifications are working on this device.");
   }
   function handleWorkdayToggle(day) {
     if (!settings) {
@@ -14670,6 +14767,37 @@ function App() {
           ]
         }
       ),
+      canCheckIn && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "button",
+        {
+          className: "manual-start-button",
+          type: "button",
+          onClick: handleOpenStartTimeModal,
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(IconPencil, { size: 16 }),
+            "Choose start time"
+          ]
+        }
+      ),
+      showStartTimeModal && canCheckIn && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "warning-modal start-time-modal", role: "dialog", "aria-label": "Choose start time", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "Choose start time" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("label", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Start time" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "input",
+            {
+              type: "time",
+              value: manualStartTime,
+              max: format(now, "HH:mm"),
+              onChange: (event) => setManualStartTime(event.target.value)
+            }
+          )
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-actions", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => setShowStartTimeModal(false), children: "Cancel" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => void handleManualCheckIn(), children: "Start" })
+        ] })
+      ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "progress-block", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "progress-label", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
@@ -14720,6 +14848,31 @@ function App() {
           ] })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Today is completed. A new shift can start tomorrow." })
+      ] }),
+      todayRecord && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            className: "delete-log-button",
+            type: "button",
+            onClick: () => {
+              setShowEarlyWarning(false);
+              setShowDeleteTodayConfirm(true);
+            },
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(IconTrash, { size: 16 }),
+              "Delete today log"
+            ]
+          }
+        ),
+        showDeleteTodayConfirm && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "warning-modal delete-log-modal", role: "dialog", "aria-label": "Delete today log", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "Delete today log?" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "This will remove today's check-in, checkout, and total time." }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-actions", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => setShowDeleteTodayConfirm(false), children: "Cancel" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => void handleDeleteTodayLog(), children: "Delete" })
+          ] })
+        ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
@@ -14927,7 +15080,19 @@ function App() {
               ),
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "min" })
             ] })
-          ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "settings-actions notification-actions", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "button",
+            {
+              className: "toolbar-button",
+              type: "button",
+              onClick: handleTestNotification,
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(IconBell, { size: 16 }),
+                "Test notification"
+              ]
+            }
+          ) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-group", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("h2", { children: [
@@ -14979,7 +15144,7 @@ function App() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-note", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "settings-note", style: { marginTop: "1em" }, children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx(IconSpeakerphone, { size: 16 }),
         "Local-only data storage"
       ] })

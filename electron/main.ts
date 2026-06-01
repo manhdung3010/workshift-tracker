@@ -35,6 +35,7 @@ function registerIpcHandlers(): void {
   ipcMain.handle("workshift:update-record", (_event, record: WorkdayRecord) =>
     store.updateRecord(record)
   );
+  ipcMain.handle("workshift:delete-record", (_event, date: string) => store.deleteRecord(date));
   ipcMain.handle(
     "workshift:update-settings",
     (_event, settingsPatch: Partial<WorkshiftSettings>) => {

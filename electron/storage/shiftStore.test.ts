@@ -105,4 +105,13 @@ describe("createShiftStore", () => {
     expect(state.records[0]?.note).toBe("Remote day");
     expect(state.records[0]?.isOvertime).toBe(true);
   });
+
+  it("deletes a record by date", () => {
+    const store = createShiftStore(tempStatePath());
+
+    store.checkIn("2026-05-29T01:15:00.000Z");
+    const state = store.deleteRecord("2026-05-29");
+
+    expect(state.records).toEqual([]);
+  });
 });

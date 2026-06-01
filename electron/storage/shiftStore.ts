@@ -26,6 +26,7 @@ export type ShiftStore = {
   checkIn(nowIso: string): WorkshiftState;
   checkOut(nowIso: string): WorkshiftState;
   updateRecord(record: WorkdayRecord): WorkshiftState;
+  deleteRecord(date: string): WorkshiftState;
   updateSettings(settingsPatch: Partial<WorkshiftSettings>): WorkshiftState;
 };
 
@@ -123,6 +124,15 @@ export function createShiftStore(filePath: string): ShiftStore {
 
     updateRecord(record: WorkdayRecord) {
       return upsertRecord(record);
+    },
+
+    deleteRecord(date: string) {
+      const state = readState();
+
+      return writeState({
+        ...state,
+        records: state.records.filter((record) => record.date !== date)
+      });
     },
 
     updateSettings(settingsPatch: Partial<WorkshiftSettings>) {

@@ -98,6 +98,13 @@ function createShiftStore(filePath) {
     updateRecord(record) {
       return upsertRecord(record);
     },
+    deleteRecord(date) {
+      const state = readState();
+      return writeState({
+        ...state,
+        records: state.records.filter((record) => record.date !== date)
+      });
+    },
     updateSettings(settingsPatch) {
       const state = readState();
       return writeState({
@@ -155,6 +162,7 @@ function registerIpcHandlers() {
     "workshift:update-record",
     (_event, record) => store.updateRecord(record)
   );
+  ipcMain.handle("workshift:delete-record", (_event, date) => store.deleteRecord(date));
   ipcMain.handle(
     "workshift:update-settings",
     (_event, settingsPatch) => {
