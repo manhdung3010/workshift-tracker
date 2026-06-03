@@ -20,10 +20,11 @@ const defaultState: WorkshiftState = {
     workStartTime: "09:00",
     workEndTime: "18:00",
     lunchStartTime: "12:00",
-    lunchEndTime: "13:00",
+    lunchEndTime: "13:30",
     workdays: [1, 2, 3, 4, 5]
   },
-  records: []
+  records: [],
+  windowBounds: {}
 };
 
 let memoryState: WorkshiftState = defaultState;

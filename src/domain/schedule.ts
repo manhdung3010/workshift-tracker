@@ -81,6 +81,23 @@ export function estimatedShiftEndTime({
   return cursor;
 }
 
+export function remainingShiftMinutes({
+  settings,
+  checkInAt,
+  targetMinutes,
+  now
+}: {
+  settings: WorkshiftSettings;
+  checkInAt: Date;
+  targetMinutes: number;
+  now: Date;
+}): number {
+  const estimatedEnd = estimatedShiftEndTime({ settings, checkInAt, targetMinutes });
+  const remainingMs = Math.max(0, estimatedEnd.getTime() - now.getTime());
+
+  return Math.ceil(remainingMs / 60_000);
+}
+
 export function isInLunchBreak(settings: WorkshiftSettings, now: Date): boolean {
   const current = localMinutes(now);
   return (

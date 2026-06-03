@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WorkdayRecord } from "../types/workshift";
 import {
+  buildWorkdayRecordFromTimes,
   dayOffCount,
   missingDays,
   monthlyTotalMinutes,
@@ -129,5 +130,49 @@ describe("workdayLogRows", () => {
         tone: "success"
       }
     ]);
+  });
+});
+
+describe("buildWorkdayRecordFromTimes", () => {
+  it("creates a new workday record from a date key and local times", () => {
+    expect(
+      buildWorkdayRecordFromTimes({
+        date: "2026-05-07",
+        checkInTime: "08:30",
+        checkOutTime: "17:30",
+        targetMinutes: 480
+      })
+    ).toEqual({
+      date: "2026-05-07",
+      checkInAt: new Date(2026, 4, 7, 8, 30).toISOString(),
+      checkOutAt: new Date(2026, 4, 7, 17, 30).toISOString(),
+      targetMinutes: 480,
+      note: "",
+      isDayOff: false,
+      isOvertime: false
+    });
+  });
+
+  it("updates times without dropping existing record metadata", () => {
+    expect(
+      buildWorkdayRecordFromTimes({
+        existing: record({
+          date: "2026-05-07",
+          note: "Remote",
+          isOvertime: true
+        }),
+        date: "2026-05-07",
+        checkInTime: "09:00",
+        checkOutTime: "18:00",
+        targetMinutes: 450
+      })
+    ).toMatchObject({
+      date: "2026-05-07",
+      note: "Remote",
+      isOvertime: true,
+      targetMinutes: 480,
+      checkInAt: new Date(2026, 4, 7, 9, 0).toISOString(),
+      checkOutAt: new Date(2026, 4, 7, 18, 0).toISOString()
+    });
   });
 });

@@ -89,65 +89,43 @@ button {
 }
 
 .compact-widget {
+  -webkit-app-region: drag;
+  app-region: drag;
+  position: relative;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 7px;
+  background:
+    radial-gradient(circle at 18% 30%, rgb(105 66 92 / 42%), transparent 45%),
+    linear-gradient(135deg, #26302c 0%, #26252b 58%, #31263b 100%);
   box-shadow: 0 10px 28px rgb(31 36 48 / 18%);
 }
 
 .compact-dragbar {
   -webkit-app-region: drag;
   app-region: drag;
+  position: absolute;
+  top: 0;
+  right: 1px;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 32px;
-  padding: 6px 7px 5px 8px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-soft);
+  justify-content: flex-end;
+  width: 24px;
+  min-height: 21px;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
   user-select: none;
 }
 
-.compact-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.compact-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  background: var(--primary);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.compact-brand i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--muted);
-}
-
-.compact-status-not_started .compact-brand i {
-  background: #dc2626;
-}
-
-.compact-status-working .compact-brand i {
-  background: #eab308;
-}
-
-.compact-status-completed .compact-brand i {
-  background: #16a34a;
+.compact-drag-handle {
+  flex: 1;
+  align-self: stretch;
 }
 
 .compact-zoom-button {
@@ -156,30 +134,30 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 27px;
-  height: 23px;
+  width: 21px;
+  height: 19px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
-  color: var(--muted);
+  color: rgb(255 255 255 / 70%);
   cursor: pointer;
 }
 
 .compact-zoom-button:hover {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary);
+  border-color: rgb(255 255 255 / 22%);
+  background: rgb(255 255 255 / 10%);
+  color: #ffffff;
 }
 
 .compact-body {
   display: grid;
-  flex: 1;
+  width: 100%;
+  height: 100%;
   place-items: center;
-  padding: 12px;
+  padding: 7px 10px 6px;
 }
 
-.compact-start-button,
-.compact-countdown {
+.compact-start-button {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
@@ -188,15 +166,15 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 58px;
-  border: 1px solid var(--primary);
-  border-radius: 8px;
-  background: var(--primary);
+  gap: 3px;
+  width: calc(100% - 20px);
+  min-height: 34px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 12%);
   color: #ffffff;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -209,32 +187,76 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  background: var(--surface);
-  color: var(--text);
+  gap: 2px;
+  width: 100%;
+  background: transparent;
+  color: #ffffff;
+  white-space: nowrap;
 }
 
 .compact-countdown span {
-  color: var(--primary);
-  font-size: 36px;
+  color: #ffffff;
+  font-size: clamp(18px, 38vh, 30px);
   font-weight: 900;
-  line-height: 1;
+  line-height: 0.95;
 }
 
 .compact-countdown strong {
-  color: var(--muted);
-  font-size: 12px;
+  display: block;
+  color: rgb(255 255 255 / 88%);
+  font-size: 13px;
+  font-weight: 500;
   letter-spacing: 0;
 }
 
-.compact-countdown small {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
+.compact-progress {
+  width: 100%;
+  height: 3px;
+  margin-top: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 22%);
+}
+
+.compact-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #75d7b0;
 }
 
 .compact-status-completed .compact-countdown span {
-  color: var(--success);
+  color: #9df0be;
+}
+
+@media (max-height: 58px), (max-width: 126px) {
+  .compact-body {
+    padding: 4px 24px 4px 7px;
+  }
+
+  .compact-countdown strong,
+  .compact-progress {
+    display: none;
+  }
+}
+
+@media (max-height: 42px), (max-width: 96px) {
+  .compact-widget {
+    border-radius: 6px;
+  }
+
+  .compact-body {
+    padding: 2px 20px 2px 5px;
+  }
+
+  .compact-countdown span {
+    font-size: clamp(15px, 58vh, 20px);
+  }
+
+  .compact-zoom-button {
+    width: 18px;
+    height: 17px;
+  }
 }
 
 .custom-titlebar {
@@ -734,7 +756,8 @@ h2 {
 }
 
 .start-time-modal,
-.delete-log-modal {
+.delete-log-modal,
+.edit-log-modal {
   position: absolute;
   z-index: 30;
   top: 50%;
@@ -764,6 +787,50 @@ h2 {
   font: inherit;
   font-weight: 800;
   padding: 4px 8px;
+}
+
+.edit-log-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.edit-log-date {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.edit-log-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.edit-log-date input,
+.edit-log-grid input {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  padding: 4px 8px;
+}
+
+.modal-error {
+  margin: 0 0 10px;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .modal-actions {
@@ -797,6 +864,11 @@ h2 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
+}
+
+.log-actions {
+  display: grid;
+  margin: 10px 14px 0;
 }
 
 .summary-strip div {
@@ -844,13 +916,31 @@ h2 {
 
 .log-row {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 44px 1fr auto 32px;
   align-items: center;
   gap: 8px;
   min-height: 58px;
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
+}
+
+.log-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.log-edit-button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
 }
 
 .log-date strong,

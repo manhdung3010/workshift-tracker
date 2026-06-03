@@ -24,7 +24,18 @@ export type WorkshiftSettings = {
   workdays: number[];
 };
 
+export type WorkshiftWindowBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type WorkshiftState = {
   settings: WorkshiftSettings;
   records: WorkdayRecord[];
+  windowBounds: {
+    main?: WorkshiftWindowBounds;
+    compact?: WorkshiftWindowBounds;
+  };
 };

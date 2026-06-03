@@ -1,5 +1,5 @@
 import type { WorkdayRecord } from "../types/workshift";
-import { elapsedMinutes, formatDuration } from "./time";
+import { dateKeyWithTime, elapsedMinutes, formatDuration } from "./time";
 
 export type WeeklyTotal = {
   weekLabel: string;
@@ -15,6 +15,36 @@ export type WorkdayLogRow = {
   badge: string;
   tone: "success" | "warning" | "danger" | "muted";
 };
+
+export type WorkdayRecordTimeInput = {
+  existing?: WorkdayRecord;
+  date: string;
+  checkInTime: string;
+  checkOutTime: string;
+  targetMinutes: number;
+};
+
+export function buildWorkdayRecordFromTimes({
+  existing,
+  date,
+  checkInTime,
+  checkOutTime,
+  targetMinutes
+}: WorkdayRecordTimeInput): WorkdayRecord {
+  const checkInAt = dateKeyWithTime(date, checkInTime);
+  const checkOutAt = dateKeyWithTime(date, checkOutTime);
+
+  return {
+    date,
+    targetMinutes,
+    note: "",
+    isDayOff: false,
+    isOvertime: false,
+    ...existing,
+    checkInAt: checkInAt.toISOString(),
+    checkOutAt: checkOutAt.toISOString()
+  };
+}
 
 function isInMonth(record: WorkdayRecord, month: string): boolean {
   return record.date.startsWith(`${month}-`);

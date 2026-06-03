@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS = {
   workStartTime: "09:00",
   workEndTime: "18:00",
   lunchStartTime: "12:00",
-  lunchEndTime: "13:00",
+  lunchEndTime: "13:30",
   workdays: [1, 2, 3, 4, 5]
 };
 function localDateKey(nowIso) {
@@ -26,7 +26,8 @@ function localDateKey(nowIso) {
 function defaultState() {
   return {
     settings: DEFAULT_SETTINGS,
-    records: []
+    records: [],
+    windowBounds: {}
   };
 }
 function normalizeState(input) {
@@ -35,7 +36,25 @@ function normalizeState(input) {
       ...DEFAULT_SETTINGS,
       ...input.settings ?? {}
     },
-    records: input.records ?? []
+    records: input.records ?? [],
+    windowBounds: normalizeWindowBounds(input.windowBounds)
+  };
+}
+function normalizeWindowBounds(input) {
+  return {
+    main: normalizeBounds(input?.main),
+    compact: normalizeBounds(input?.compact)
+  };
+}
+function normalizeBounds(input) {
+  if (typeof input?.x !== "number" || typeof input.y !== "number" || typeof input.width !== "number" || typeof input.height !== "number") {
+    return void 0;
+  }
+  return {
+    x: input.x,
+    y: input.y,
+    width: input.width,
+    height: input.height
   };
 }
 function createShiftStore(filePath) {
@@ -114,59 +133,119 @@ function createShiftStore(filePath) {
           ...settingsPatch
         }
       });
+    },
+    updateWindowBounds(boundsPatch) {
+      const state = readState();
+      return writeState({
+        ...state,
+        windowBounds: normalizeWindowBounds({
+          ...state.windowBounds,
+          ...boundsPatch
+        })
+      });
     }
   };
 }
-const COMPACT_WIDTH = 220;
-const COMPACT_HEIGHT = 150;
+const COMPACT_DEFAULT_WIDTH = 154;
+const COMPACT_DEFAULT_HEIGHT = 80;
+const COMPACT_MIN_WIDTH = 78;
+const COMPACT_MIN_HEIGHT = 34;
 const MAIN_WIDTH = 444;
 const MAIN_HEIGHT = 760;
 const MAIN_MIN_WIDTH = 380;
 const MAIN_MIN_HEIGHT = 680;
-function compactAppWindow(targetWindow) {
+let lastMainBounds;
+let lastCompactBounds;
+function getSavedPositions(positionStore) {
+  return positionStore?.getPositions() ?? {
+    main: lastMainBounds,
+    compact: lastCompactBounds
+  };
+}
+function savePositions(boundsPatch, positionStore) {
+  if (positionStore) {
+    positionStore.updatePositions(boundsPatch);
+    return;
+  }
+  lastMainBounds = boundsPatch.main ?? lastMainBounds;
+  lastCompactBounds = boundsPatch.compact ?? lastCompactBounds;
+}
+function compactAppWindow(targetWindow, positionStore) {
   if (!targetWindow || targetWindow.isDestroyed()) {
     return { ok: false, action: "none", reason: "window-not-found" };
   }
-  targetWindow.setMinimumSize(COMPACT_WIDTH, COMPACT_HEIGHT);
-  targetWindow.setSize(COMPACT_WIDTH, COMPACT_HEIGHT);
+  const mainBounds = targetWindow.getBounds();
+  const savedPositions = getSavedPositions(positionStore);
+  savePositions({ main: mainBounds }, positionStore);
+  targetWindow.setMinimumSize(COMPACT_MIN_WIDTH, COMPACT_MIN_HEIGHT);
+  targetWindow.setBounds(
+    savedPositions.compact ?? {
+      ...mainBounds,
+      width: COMPACT_DEFAULT_WIDTH,
+      height: COMPACT_DEFAULT_HEIGHT
+    }
+  );
   targetWindow.setAlwaysOnTop(true, "floating");
   return { ok: true, action: "compact" };
 }
-function restoreAppWindow(targetWindow) {
+function restoreAppWindow(targetWindow, positionStore) {
   if (!targetWindow || targetWindow.isDestroyed()) {
     return { ok: false, action: "none", reason: "window-not-found" };
   }
+  const compactBounds = targetWindow.getBounds();
+  const savedPositions = getSavedPositions(positionStore);
+  savePositions({ compact: compactBounds }, positionStore);
   targetWindow.setMinimumSize(MAIN_MIN_WIDTH, MAIN_MIN_HEIGHT);
-  targetWindow.setSize(MAIN_WIDTH, MAIN_HEIGHT);
   targetWindow.setAlwaysOnTop(false);
-  targetWindow.center();
+  if (savedPositions.main) {
+    targetWindow.setBounds(savedPositions.main);
+  } else {
+    targetWindow.setSize(MAIN_WIDTH, MAIN_HEIGHT);
+    targetWindow.center();
+  }
   return { ok: true, action: "restore" };
+}
+function hideAppWindow(targetWindow) {
+  if (!targetWindow || targetWindow.isDestroyed()) {
+    return { ok: false, action: "none", reason: "window-not-found" };
+  }
+  targetWindow.setAlwaysOnTop(false);
+  targetWindow.hide();
+  return { ok: true, action: "hide" };
 }
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
+let store = null;
 app.disableHardwareAcceleration();
 function getControlWindow(eventSender) {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.fromWebContents(eventSender) ?? mainWindow ?? BrowserWindow.getAllWindows().find((window) => !window.isDestroyed()) ?? null;
 }
 function registerIpcHandlers() {
-  const store = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  const appStore = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  store = appStore;
   app.setLoginItemSettings({
-    openAtLogin: store.getState().settings.startAtLogin
+    openAtLogin: appStore.getState().settings.startAtLogin
   });
-  ipcMain.handle("workshift:get-state", () => store.getState());
-  ipcMain.handle("workshift:check-in", (_event, nowIso) => store.checkIn(nowIso));
-  ipcMain.handle("workshift:check-out", (_event, nowIso) => store.checkOut(nowIso));
+  const windowPositionStore = {
+    getPositions: () => appStore.getState().windowBounds,
+    updatePositions: (boundsPatch) => {
+      appStore.updateWindowBounds(boundsPatch);
+    }
+  };
+  ipcMain.handle("workshift:get-state", () => appStore.getState());
+  ipcMain.handle("workshift:check-in", (_event, nowIso) => appStore.checkIn(nowIso));
+  ipcMain.handle("workshift:check-out", (_event, nowIso) => appStore.checkOut(nowIso));
   ipcMain.handle(
     "workshift:update-record",
-    (_event, record) => store.updateRecord(record)
+    (_event, record) => appStore.updateRecord(record)
   );
-  ipcMain.handle("workshift:delete-record", (_event, date) => store.deleteRecord(date));
+  ipcMain.handle("workshift:delete-record", (_event, date) => appStore.deleteRecord(date));
   ipcMain.handle(
     "workshift:update-settings",
     (_event, settingsPatch) => {
-      const nextState = store.updateSettings(settingsPatch);
+      const nextState = appStore.updateSettings(settingsPatch);
       if (settingsPatch.startAtLogin !== void 0) {
         app.setLoginItemSettings({
           openAtLogin: settingsPatch.startAtLogin
@@ -176,17 +255,17 @@ function registerIpcHandlers() {
     }
   );
   ipcMain.handle("window:minimize", (event) => {
-    const result = compactAppWindow(getControlWindow(event.sender));
+    const result = compactAppWindow(getControlWindow(event.sender), windowPositionStore);
     console.info("[window:minimize]", result);
     return result;
   });
   ipcMain.handle("window:restore", (event) => {
-    const result = restoreAppWindow(getControlWindow(event.sender));
+    const result = restoreAppWindow(getControlWindow(event.sender), windowPositionStore);
     console.info("[window:restore]", result);
     return result;
   });
   ipcMain.handle("window:close", (event) => {
-    const result = compactAppWindow(getControlWindow(event.sender));
+    const result = hideAppWindow(getControlWindow(event.sender));
     console.info("[window:close]", result);
     return result;
   });
@@ -242,9 +321,12 @@ function createTray() {
   tray.on("click", showMainWindow);
 }
 function createMainWindow() {
+  const savedMainBounds = store?.getState().windowBounds.main;
   mainWindow = new BrowserWindow({
-    width: 444,
-    height: 760,
+    width: savedMainBounds?.width ?? 444,
+    height: savedMainBounds?.height ?? 760,
+    x: savedMainBounds?.x,
+    y: savedMainBounds?.y,
     minWidth: 380,
     minHeight: 680,
     frame: false,

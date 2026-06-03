@@ -25,7 +25,8 @@ describe("createShiftStore", () => {
 
     expect(store.getState()).toEqual({
       settings: DEFAULT_SETTINGS,
-      records: []
+      records: [],
+      windowBounds: {}
     });
   });
 
@@ -87,6 +88,20 @@ describe("createShiftStore", () => {
       showWidget: false
     });
     expect(state.records).toHaveLength(1);
+  });
+
+  it("persists window bounds to disk between store instances", () => {
+    const path = tempStatePath();
+
+    createShiftStore(path).updateWindowBounds({
+      main: { x: 120, y: 140, width: 444, height: 760 },
+      compact: { x: 700, y: 80, width: 154, height: 80 }
+    });
+
+    expect(createShiftStore(path).getState().windowBounds).toEqual({
+      main: { x: 120, y: 140, width: 444, height: 760 },
+      compact: { x: 700, y: 80, width: 154, height: 80 }
+    });
   });
 
   it("updates an existing record by date", () => {

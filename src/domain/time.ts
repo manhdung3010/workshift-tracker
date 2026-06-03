@@ -1,5 +1,20 @@
 import type { ShiftStatus, WorkdayRecord } from "../types/workshift";
 
+export function dateKeyWithTime(dateKey: string, timeValue: string): Date {
+  const [year = "0", month = "1", day = "1"] = dateKey.split("-");
+  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
+
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hoursValue),
+    Number(minutesValue),
+    0,
+    0
+  );
+}
+
 export function dateWithTime(now: Date, timeValue: string): Date {
   const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
   const selected = new Date(now);

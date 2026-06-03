@@ -12,6 +12,7 @@ import {
   IconMinus,
   IconPencil,
   IconPlayerPlay,
+  IconPlus,
   IconSettings,
   IconSpeakerphone,
   IconTableExport,
@@ -23,8 +24,8 @@ import {
 } from "@tabler/icons-react";
 import { addMonths, format, isSameMonth, subMonths } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { workdayLogRows } from "./domain/records";
-import { effectiveWorkMinutes, estimatedShiftEndTime, shouldRemindToStart } from "./domain/schedule";
+import { buildWorkdayRecordFromTimes, workdayLogRows } from "./domain/records";
+import { effectiveWorkMinutes, estimatedShiftEndTime, remainingShiftMinutes, shouldRemindToStart } from "./domain/schedule";
 import { dateWithTime, elapsedMinutes, formatDuration, progressRatio, shiftStatus } from "./domain/time";
 import { workshiftApi } from "./lib/electronApi";
 import type { WorkdayRecord, WorkshiftSettings, WorkshiftState } from "./types/workshift";
@@ -78,6 +79,14 @@ function targetHoursValue(minutes: number): string {
   return (minutes / 60).toFixed(2).replace(/\.00$/, "");
 }
 
+function compactDuration(minutes: number): string {
+  const safeMinutes = Math.max(0, Math.floor(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+
+  return `${hours}:${remainingMinutes.toString().padStart(2, "0")}`;
+}
+
 function notify(title: string, body: string): void {
   if (!("Notification" in window)) {
     return;
@@ -106,6 +115,11 @@ export function App(): React.JSX.Element {
   const [showDeleteTodayConfirm, setShowDeleteTodayConfirm] = useState(false);
   const [showStartTimeModal, setShowStartTimeModal] = useState(false);
   const [manualStartTime, setManualStartTime] = useState(() => format(new Date(), "HH:mm"));
+  const [logEditMode, setLogEditMode] = useState<"add" | "edit">("edit");
+  const [editingLogDate, setEditingLogDate] = useState<string | undefined>(undefined);
+  const [editCheckInTime, setEditCheckInTime] = useState("");
+  const [editCheckOutTime, setEditCheckOutTime] = useState("");
+  const [editLogError, setEditLogError] = useState("");
   const [isCompact, setIsCompact] = useState(false);
   const lastStartReminderAt = useRef<Date | undefined>(undefined);
   const completedNotificationDate = useRef<string | undefined>(undefined);
@@ -131,9 +145,15 @@ export function App(): React.JSX.Element {
   const elapsed = todayRecord ? elapsedMinutes(todayRecord, now) : 0;
   const target = todayRecord?.targetMinutes ?? state?.settings.targetMinutes ?? 480;
   const progressPercent = Math.round(progressRatio(todayRecord, now) * 100);
-  const remaining = Math.max(0, target - elapsed);
-  const compactStateLabel =
-    status === "completed" ? "DONE" : status === "checked_out" ? "ENDED" : "LEFT";
+  const remaining =
+    todayRecord?.checkInAt && settings
+      ? remainingShiftMinutes({
+          settings,
+          checkInAt: new Date(todayRecord.checkInAt),
+          targetMinutes: target,
+          now
+        })
+      : Math.max(0, target - elapsed);
   const canCheckIn = status === "not_started";
   const canEndNormally = status === "completed";
   const isWorking = status === "working" || status === "completed";
@@ -202,8 +222,8 @@ export function App(): React.JSX.Element {
   function handleClose(event: React.MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
     event.stopPropagation();
-    setIsCompact(true);
-    void workshiftApi.minimizeWindow();
+    setIsCompact(false);
+    void workshiftApi.closeWindow();
   }
 
   async function handleCheckIn(): Promise<void> {
@@ -268,6 +288,58 @@ export function App(): React.JSX.Element {
     notify("WorkShift test", "Notifications are working on this device.");
   }
 
+  function handleOpenAddLog(): void {
+    setLogEditMode("add");
+    setEditingLogDate(format(selectedMonth, "yyyy-MM-dd"));
+    setEditCheckInTime(settings?.workStartTime ?? "09:00");
+    setEditCheckOutTime(settings?.workEndTime ?? "18:00");
+    setEditLogError("");
+  }
+
+  function handleOpenEditLog(record: WorkdayRecord): void {
+    setLogEditMode("edit");
+    setEditingLogDate(record.date);
+    setEditCheckInTime(record.checkInAt ? format(new Date(record.checkInAt), "HH:mm") : "");
+    setEditCheckOutTime(record.checkOutAt ? format(new Date(record.checkOutAt), "HH:mm") : "");
+    setEditLogError("");
+  }
+
+  async function handleSaveLogEdit(): Promise<void> {
+    const record = state?.records.find((item) => item.date === editingLogDate);
+    const targetMinutes = settings?.targetMinutes ?? 480;
+
+    if (!editingLogDate || !editCheckInTime) {
+      setEditLogError("Check-in time is required.");
+      return;
+    }
+
+    if (!editCheckOutTime) {
+      setEditLogError("Check-out time is required.");
+      return;
+    }
+
+    const nextRecord = buildWorkdayRecordFromTimes({
+      existing: record,
+      date: editingLogDate,
+      checkInTime: editCheckInTime,
+      checkOutTime: editCheckOutTime,
+      targetMinutes
+    });
+
+    if (
+      nextRecord.checkOutAt &&
+      new Date(nextRecord.checkOutAt).getTime() < new Date(nextRecord.checkInAt ?? "").getTime()
+    ) {
+      setEditLogError("Check-out must be after check-in.");
+      return;
+    }
+
+    setState(await workshiftApi.updateRecord(nextRecord));
+    setEditingLogDate(undefined);
+    setEditLogError("");
+    setNow(new Date());
+  }
+
   function handleWorkdayToggle(day: number): void {
     if (!settings) {
       return;
@@ -289,10 +361,7 @@ export function App(): React.JSX.Element {
             aria-label="Compact work shift widget"
           >
             <div className="compact-dragbar">
-              <div className="compact-brand" aria-hidden="true">
-                <span className="compact-mark">W</span>
-                <i />
-              </div>
+              <span className="compact-drag-handle" aria-hidden="true" />
               <button
                 className="compact-zoom-button"
                 type="button"
@@ -316,9 +385,11 @@ export function App(): React.JSX.Element {
                 </button>
               ) : (
                 <div className="compact-countdown" aria-live="polite">
-                  <span>{formatDuration(remaining)}</span>
-                  <strong>{compactStateLabel}</strong>
-                  <small>{estimatedEnd}</small>
+                  <span>{compactDuration(remaining)}</span>
+                  <strong>Shift Ends {estimatedEnd}</strong>
+                  <div className="compact-progress" aria-hidden="true">
+                    <i style={{ width: `${progressPercent}%` }} />
+                  </div>
                 </div>
               )}
             </div>
@@ -598,6 +669,13 @@ export function App(): React.JSX.Element {
               </button>
             </div>
 
+            <div className="log-actions">
+              <button className="toolbar-button" type="button" onClick={handleOpenAddLog}>
+                <IconPlus size={16} />
+                Add log
+              </button>
+            </div>
+
             <div className="summary-strip">
               <div>
                 <span>Total hours</span>
@@ -620,21 +698,81 @@ export function App(): React.JSX.Element {
                   <span>No saved work logs for this month</span>
                 </div>
               ) : (
-                logRows.map((item) => (
-                  <div className="log-row" key={item.date}>
-                    <div className="log-date">
-                      <strong>{item.day}</strong>
-                      <span>{item.weekday}</span>
+                logRows.map((item) => {
+                  const record = state?.records.find((entry) => entry.date === item.date);
+
+                  return (
+                    <div className="log-row" key={item.date}>
+                      <div className="log-date">
+                        <strong>{item.day}</strong>
+                        <span>{item.weekday}</span>
+                      </div>
+                      <div className="log-time">
+                        <span>{item.time}</span>
+                        <strong>{item.total}</strong>
+                      </div>
+                      <span className={`badge badge-${item.tone}`}>{item.badge}</span>
+                      {record?.checkInAt && (
+                        <button
+                          className="log-edit-button"
+                          type="button"
+                          aria-label={`Edit log for ${item.date}`}
+                          title="Edit log"
+                          onClick={() => handleOpenEditLog(record)}
+                        >
+                          <IconPencil size={15} />
+                        </button>
+                      )}
                     </div>
-                    <div className="log-time">
-                      <span>{item.time}</span>
-                      <strong>{item.total}</strong>
-                    </div>
-                    <span className={`badge badge-${item.tone}`}>{item.badge}</span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
+
+            {editingLogDate && (
+              <div className="warning-modal edit-log-modal" role="dialog" aria-label="Edit work log">
+                <strong>{logEditMode === "add" ? "Add work log" : "Edit work log"}</strong>
+                {logEditMode === "add" ? (
+                  <label className="edit-log-date">
+                    <span>Date</span>
+                    <input
+                      type="date"
+                      value={editingLogDate}
+                      onChange={(event) => setEditingLogDate(event.target.value)}
+                    />
+                  </label>
+                ) : (
+                  <p>{format(new Date(`${editingLogDate}T00:00:00`), "EEEE, dd MMMM yyyy")}</p>
+                )}
+                <div className="edit-log-grid">
+                  <label>
+                    <span>Check-in</span>
+                    <input
+                      type="time"
+                      value={editCheckInTime}
+                      onChange={(event) => setEditCheckInTime(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>Check-out</span>
+                    <input
+                      type="time"
+                      value={editCheckOutTime}
+                      onChange={(event) => setEditCheckOutTime(event.target.value)}
+                    />
+                  </label>
+                </div>
+                {editLogError && <p className="modal-error">{editLogError}</p>}
+                <div className="modal-actions">
+                  <button type="button" onClick={() => setEditingLogDate(undefined)}>
+                    Cancel
+                  </button>
+                  <button type="button" onClick={() => void handleSaveLogEdit()}>
+                    Save
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         )}
 

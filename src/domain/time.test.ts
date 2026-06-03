@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WorkdayRecord } from "../types/workshift";
 import {
   dateWithTime,
+  dateKeyWithTime,
   elapsedMinutes,
   formatDuration,
   progressRatio,
@@ -55,6 +56,14 @@ describe("dateWithTime", () => {
   it("clamps future selected time to now", () => {
     expect(dateWithTime(new Date(2026, 4, 29, 14, 45), "16:00")).toEqual(
       new Date(2026, 4, 29, 14, 45)
+    );
+  });
+});
+
+describe("dateKeyWithTime", () => {
+  it("uses the selected local time on the given date key", () => {
+    expect(dateKeyWithTime("2026-05-04", "08:30")).toEqual(
+      new Date(2026, 4, 4, 8, 30)
     );
   });
 });

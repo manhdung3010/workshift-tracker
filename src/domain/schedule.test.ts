@@ -4,6 +4,7 @@ import {
   effectiveWorkMinutes,
   estimatedShiftEndTime,
   isInLunchBreak,
+  remainingShiftMinutes,
   shouldRemindToStart
 } from "./schedule";
 
@@ -57,6 +58,30 @@ describe("estimatedShiftEndTime", () => {
         targetMinutes: 181
       })
     ).toEqual(new Date(2026, 4, 29, 13, 1));
+  });
+});
+
+describe("remainingShiftMinutes", () => {
+  it("includes upcoming lunch time in the remaining wall-clock time", () => {
+    expect(
+      remainingShiftMinutes({
+        settings,
+        checkInAt: new Date(2026, 4, 29, 9, 0),
+        targetMinutes: 480,
+        now: new Date(2026, 4, 29, 10, 0)
+      })
+    ).toBe(480);
+  });
+
+  it("does not include lunch time after lunch has passed", () => {
+    expect(
+      remainingShiftMinutes({
+        settings,
+        checkInAt: new Date(2026, 4, 29, 9, 0),
+        targetMinutes: 480,
+        now: new Date(2026, 4, 29, 14, 0)
+      })
+    ).toBe(240);
   });
 });
 

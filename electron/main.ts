@@ -2,14 +2,15 @@ import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { WorkdayRecord, WorkshiftSettings } from "../src/types/workshift";
-import { createShiftStore } from "./storage/shiftStore";
-import { compactAppWindow, restoreAppWindow } from "./windowControls";
+import { createShiftStore, type ShiftStore } from "./storage/shiftStore";
+import { compactAppWindow, hideAppWindow, restoreAppWindow, type WindowPositionStore } from "./windowControls";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
+let store: ShiftStore | null = null;
 
 app.disableHardwareAcceleration();
 
@@ -24,22 +25,30 @@ function getControlWindow(eventSender: Electron.WebContents): BrowserWindow | nu
 }
 
 function registerIpcHandlers(): void {
-  const store = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  const appStore = createShiftStore(path.join(app.getPath("userData"), "workshift-state.json"));
+  store = appStore;
   app.setLoginItemSettings({
-    openAtLogin: store.getState().settings.startAtLogin
+    openAtLogin: appStore.getState().settings.startAtLogin
   });
 
-  ipcMain.handle("workshift:get-state", () => store.getState());
-  ipcMain.handle("workshift:check-in", (_event, nowIso: string) => store.checkIn(nowIso));
-  ipcMain.handle("workshift:check-out", (_event, nowIso: string) => store.checkOut(nowIso));
+  const windowPositionStore: WindowPositionStore = {
+    getPositions: () => appStore.getState().windowBounds,
+    updatePositions: (boundsPatch) => {
+      appStore.updateWindowBounds(boundsPatch);
+    }
+  };
+
+  ipcMain.handle("workshift:get-state", () => appStore.getState());
+  ipcMain.handle("workshift:check-in", (_event, nowIso: string) => appStore.checkIn(nowIso));
+  ipcMain.handle("workshift:check-out", (_event, nowIso: string) => appStore.checkOut(nowIso));
   ipcMain.handle("workshift:update-record", (_event, record: WorkdayRecord) =>
-    store.updateRecord(record)
+    appStore.updateRecord(record)
   );
-  ipcMain.handle("workshift:delete-record", (_event, date: string) => store.deleteRecord(date));
+  ipcMain.handle("workshift:delete-record", (_event, date: string) => appStore.deleteRecord(date));
   ipcMain.handle(
     "workshift:update-settings",
     (_event, settingsPatch: Partial<WorkshiftSettings>) => {
-      const nextState = store.updateSettings(settingsPatch);
+      const nextState = appStore.updateSettings(settingsPatch);
 
       if (settingsPatch.startAtLogin !== undefined) {
         app.setLoginItemSettings({
@@ -51,17 +60,17 @@ function registerIpcHandlers(): void {
     }
   );
   ipcMain.handle("window:minimize", (event) => {
-    const result = compactAppWindow(getControlWindow(event.sender));
+    const result = compactAppWindow(getControlWindow(event.sender), windowPositionStore);
     console.info("[window:minimize]", result);
     return result;
   });
   ipcMain.handle("window:restore", (event) => {
-    const result = restoreAppWindow(getControlWindow(event.sender));
+    const result = restoreAppWindow(getControlWindow(event.sender), windowPositionStore);
     console.info("[window:restore]", result);
     return result;
   });
   ipcMain.handle("window:close", (event) => {
-    const result = compactAppWindow(getControlWindow(event.sender));
+    const result = hideAppWindow(getControlWindow(event.sender));
     console.info("[window:close]", result);
     return result;
   });
@@ -127,9 +136,12 @@ function createTray(): void {
 }
 
 function createMainWindow(): void {
+  const savedMainBounds = store?.getState().windowBounds.main;
   mainWindow = new BrowserWindow({
-    width: 444,
-    height: 760,
+    width: savedMainBounds?.width ?? 444,
+    height: savedMainBounds?.height ?? 760,
+    x: savedMainBounds?.x,
+    y: savedMainBounds?.y,
     minWidth: 380,
     minHeight: 680,
     frame: false,

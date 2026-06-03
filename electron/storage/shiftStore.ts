@@ -4,7 +4,8 @@ import { format } from "date-fns";
 import type {
   WorkdayRecord,
   WorkshiftSettings,
-  WorkshiftState
+  WorkshiftState,
+  WorkshiftWindowBounds
 } from "../../src/types/workshift";
 
 export const DEFAULT_SETTINGS: WorkshiftSettings = {
@@ -17,7 +18,7 @@ export const DEFAULT_SETTINGS: WorkshiftSettings = {
   workStartTime: "09:00",
   workEndTime: "18:00",
   lunchStartTime: "12:00",
-  lunchEndTime: "13:00",
+  lunchEndTime: "13:30",
   workdays: [1, 2, 3, 4, 5]
 };
 
@@ -28,6 +29,7 @@ export type ShiftStore = {
   updateRecord(record: WorkdayRecord): WorkshiftState;
   deleteRecord(date: string): WorkshiftState;
   updateSettings(settingsPatch: Partial<WorkshiftSettings>): WorkshiftState;
+  updateWindowBounds(boundsPatch: Partial<WorkshiftState["windowBounds"]>): WorkshiftState;
 };
 
 function localDateKey(nowIso: string): string {
@@ -37,7 +39,8 @@ function localDateKey(nowIso: string): string {
 function defaultState(): WorkshiftState {
   return {
     settings: DEFAULT_SETTINGS,
-    records: []
+    records: [],
+    windowBounds: {}
   };
 }
 
@@ -47,7 +50,37 @@ function normalizeState(input: Partial<WorkshiftState>): WorkshiftState {
       ...DEFAULT_SETTINGS,
       ...(input.settings ?? {})
     },
-    records: input.records ?? []
+    records: input.records ?? [],
+    windowBounds: normalizeWindowBounds(input.windowBounds)
+  };
+}
+
+function normalizeWindowBounds(
+  input: Partial<WorkshiftState["windowBounds"]> | undefined
+): WorkshiftState["windowBounds"] {
+  return {
+    main: normalizeBounds(input?.main),
+    compact: normalizeBounds(input?.compact)
+  };
+}
+
+function normalizeBounds(
+  input: Partial<WorkshiftWindowBounds> | undefined
+): WorkshiftWindowBounds | undefined {
+  if (
+    typeof input?.x !== "number" ||
+    typeof input.y !== "number" ||
+    typeof input.width !== "number" ||
+    typeof input.height !== "number"
+  ) {
+    return undefined;
+  }
+
+  return {
+    x: input.x,
+    y: input.y,
+    width: input.width,
+    height: input.height
   };
 }
 
@@ -144,6 +177,18 @@ export function createShiftStore(filePath: string): ShiftStore {
           ...state.settings,
           ...settingsPatch
         }
+      });
+    },
+
+    updateWindowBounds(boundsPatch: Partial<WorkshiftState["windowBounds"]>) {
+      const state = readState();
+
+      return writeState({
+        ...state,
+        windowBounds: normalizeWindowBounds({
+          ...state.windowBounds,
+          ...boundsPatch
+        })
       });
     }
   };
