@@ -495,10 +495,24 @@ export function App(): React.JSX.Element {
               className={`start-circle ${isWorking ? "start-circle-active" : ""}`}
               type="button"
               disabled={!canCheckIn}
+              style={
+                isWorking
+                  ? ({ "--shift-progress": `${progressPercent}%` } as React.CSSProperties)
+                  : undefined
+              }
               onClick={() => void handleCheckIn()}
             >
-              <IconPlayerPlay size={28} />
-              <span>{isWorking ? "SHIFT ON" : "START SHIFT"}</span>
+              {isWorking ? (
+                <span className="shift-progress-ring" aria-label={`${progressPercent}% complete`}>
+                  <strong>{progressPercent}%</strong>
+                  <small>{formatDuration(remaining)}</small>
+                </span>
+              ) : (
+                <>
+                  <IconPlayerPlay size={28} />
+                  <span>START SHIFT</span>
+                </>
+              )}
             </button>
 
             {canCheckIn && (

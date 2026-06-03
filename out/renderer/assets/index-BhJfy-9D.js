@@ -14856,17 +14856,24 @@ function App() {
           " Done"
         ] })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
         {
           className: `start-circle ${isWorking ? "start-circle-active" : ""}`,
           type: "button",
           disabled: !canCheckIn,
+          style: isWorking ? { "--shift-progress": `${progressPercent}%` } : void 0,
           onClick: () => void handleCheckIn(),
-          children: [
+          children: isWorking ? /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "shift-progress-ring", "aria-label": `${progressPercent}% complete`, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("strong", { children: [
+              progressPercent,
+              "%"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("small", { children: formatDuration(remaining) })
+          ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(IconPlayerPlay, { size: 28 }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: isWorking ? "SHIFT ON" : "START SHIFT" })
-          ]
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "START SHIFT" })
+          ] })
         }
       ),
       canCheckIn && /* @__PURE__ */ jsxRuntimeExports.jsxs(
