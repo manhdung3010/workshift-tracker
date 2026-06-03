@@ -14258,6 +14258,49 @@ function remainingShiftMinutes({
   const remainingMs = Math.max(0, estimatedEnd.getTime() - now.getTime());
   return Math.ceil(remainingMs / 6e4);
 }
+function elapsedWorkMinutesWithSchedule({
+  settings,
+  checkInAt,
+  now
+}) {
+  const start = checkInAt.getTime();
+  const end = Math.max(start, now.getTime());
+  const lunchStart = timeOnDate(checkInAt, settings.lunchStartTime).getTime();
+  const lunchEnd = timeOnDate(checkInAt, settings.lunchEndTime).getTime();
+  const totalMs = end - start;
+  if (lunchEnd <= lunchStart) {
+    return Math.floor(totalMs / 6e4);
+  }
+  const lunchOverlapMs = Math.max(0, Math.min(end, lunchEnd) - Math.max(start, lunchStart));
+  return Math.floor((totalMs - lunchOverlapMs) / 6e4);
+}
+function shiftStatusWithSchedule(record, settings, now) {
+  if (!record?.checkInAt) {
+    return "not_started";
+  }
+  if (record.checkOutAt) {
+    return "checked_out";
+  }
+  if (elapsedWorkMinutesWithSchedule({
+    settings,
+    checkInAt: new Date(record.checkInAt),
+    now
+  }) >= record.targetMinutes) {
+    return "completed";
+  }
+  return "working";
+}
+function progressRatioWithSchedule(record, settings, now) {
+  if (!record?.checkInAt || record.targetMinutes <= 0) {
+    return 0;
+  }
+  const workMinutes = elapsedWorkMinutesWithSchedule({
+    settings,
+    checkInAt: new Date(record.checkInAt),
+    now: record.checkOutAt ? new Date(record.checkOutAt) : now
+  });
+  return Math.min(1, workMinutes / record.targetMinutes);
+}
 function isInLunchBreak(settings, now) {
   const current = localMinutes(now);
   return current >= minutesFromTime(settings.lunchStartTime) && current < minutesFromTime(settings.lunchEndTime);
@@ -14539,11 +14582,13 @@ function App() {
   const todayRecord = reactExports.useMemo(() => {
     return state?.records.find((record) => record.date === todayKey(now));
   }, [now, state]);
-  const status = shiftStatus(todayRecord, now);
   const settings = state?.settings;
+  const status = settings ? shiftStatusWithSchedule(todayRecord, settings, now) : shiftStatus(todayRecord, now);
   const elapsed = todayRecord ? elapsedMinutes(todayRecord, now) : 0;
   const target = todayRecord?.targetMinutes ?? state?.settings.targetMinutes ?? 480;
-  const progressPercent = Math.round(progressRatio(todayRecord, now) * 100);
+  const progressPercent = Math.round(
+    (settings ? progressRatioWithSchedule(todayRecord, settings, now) : progressRatio(todayRecord, now)) * 100
+  );
   const remaining = todayRecord?.checkInAt && settings ? remainingShiftMinutes({
     settings,
     checkInAt: new Date(todayRecord.checkInAt),

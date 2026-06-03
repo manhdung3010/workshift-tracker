@@ -842,10 +842,13 @@ h2 {
 .warning-modal {
   margin: 12px 14px 0;
   padding: 12px;
-  border: 1px solid var(--warning);
+  border: 1px solid rgb(240 197 106 / 70%);
   border-radius: 8px;
-  background: var(--warning-soft);
-  box-shadow: 0 18px 42px rgb(0 0 0 / 28%);
+  background:
+    linear-gradient(180deg, rgb(49 45 37), rgb(35 38 44));
+  box-shadow:
+    0 18px 42px rgb(0 0 0 / 36%),
+    inset 0 1px 0 rgb(255 255 255 / 8%);
 }
 
 .warning-modal strong {

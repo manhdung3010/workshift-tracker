@@ -1,4 +1,4 @@
-import type { WorkdayRecord, WorkshiftSettings } from "../types/workshift";
+import type { ShiftStatus, WorkdayRecord, WorkshiftSettings } from "../types/workshift";
 
 type ReminderInput = {
   settings: WorkshiftSettings;
@@ -96,6 +96,74 @@ export function remainingShiftMinutes({
   const remainingMs = Math.max(0, estimatedEnd.getTime() - now.getTime());
 
   return Math.ceil(remainingMs / 60_000);
+}
+
+export function elapsedWorkMinutesWithSchedule({
+  settings,
+  checkInAt,
+  now
+}: {
+  settings: WorkshiftSettings;
+  checkInAt: Date;
+  now: Date;
+}): number {
+  const start = checkInAt.getTime();
+  const end = Math.max(start, now.getTime());
+  const lunchStart = timeOnDate(checkInAt, settings.lunchStartTime).getTime();
+  const lunchEnd = timeOnDate(checkInAt, settings.lunchEndTime).getTime();
+  const totalMs = end - start;
+
+  if (lunchEnd <= lunchStart) {
+    return Math.floor(totalMs / 60_000);
+  }
+
+  const lunchOverlapMs = Math.max(0, Math.min(end, lunchEnd) - Math.max(start, lunchStart));
+
+  return Math.floor((totalMs - lunchOverlapMs) / 60_000);
+}
+
+export function shiftStatusWithSchedule(
+  record: WorkdayRecord | undefined,
+  settings: WorkshiftSettings,
+  now: Date
+): ShiftStatus {
+  if (!record?.checkInAt) {
+    return "not_started";
+  }
+
+  if (record.checkOutAt) {
+    return "checked_out";
+  }
+
+  if (
+    elapsedWorkMinutesWithSchedule({
+      settings,
+      checkInAt: new Date(record.checkInAt),
+      now
+    }) >= record.targetMinutes
+  ) {
+    return "completed";
+  }
+
+  return "working";
+}
+
+export function progressRatioWithSchedule(
+  record: WorkdayRecord | undefined,
+  settings: WorkshiftSettings,
+  now: Date
+): number {
+  if (!record?.checkInAt || record.targetMinutes <= 0) {
+    return 0;
+  }
+
+  const workMinutes = elapsedWorkMinutesWithSchedule({
+    settings,
+    checkInAt: new Date(record.checkInAt),
+    now: record.checkOutAt ? new Date(record.checkOutAt) : now
+  });
+
+  return Math.min(1, workMinutes / record.targetMinutes);
 }
 
 export function isInLunchBreak(settings: WorkshiftSettings, now: Date): boolean {

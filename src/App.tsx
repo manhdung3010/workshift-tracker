@@ -25,7 +25,14 @@ import {
 import { addMonths, format, isSameMonth, subMonths } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildWorkdayRecordFromTimes, workdayLogRows } from "./domain/records";
-import { effectiveWorkMinutes, estimatedShiftEndTime, remainingShiftMinutes, shouldRemindToStart } from "./domain/schedule";
+import {
+  effectiveWorkMinutes,
+  estimatedShiftEndTime,
+  progressRatioWithSchedule,
+  remainingShiftMinutes,
+  shiftStatusWithSchedule,
+  shouldRemindToStart
+} from "./domain/schedule";
 import { dateWithTime, elapsedMinutes, formatDuration, progressRatio, shiftStatus } from "./domain/time";
 import { workshiftApi } from "./lib/electronApi";
 import type { WorkdayRecord, WorkshiftSettings, WorkshiftState } from "./types/workshift";
@@ -140,11 +147,17 @@ export function App(): React.JSX.Element {
     return state?.records.find((record) => record.date === todayKey(now));
   }, [now, state]);
 
-  const status = shiftStatus(todayRecord, now);
   const settings = state?.settings;
+  const status = settings
+    ? shiftStatusWithSchedule(todayRecord, settings, now)
+    : shiftStatus(todayRecord, now);
   const elapsed = todayRecord ? elapsedMinutes(todayRecord, now) : 0;
   const target = todayRecord?.targetMinutes ?? state?.settings.targetMinutes ?? 480;
-  const progressPercent = Math.round(progressRatio(todayRecord, now) * 100);
+  const progressPercent = Math.round(
+    (settings
+      ? progressRatioWithSchedule(todayRecord, settings, now)
+      : progressRatio(todayRecord, now)) * 100
+  );
   const remaining =
     todayRecord?.checkInAt && settings
       ? remainingShiftMinutes({

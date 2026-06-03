@@ -4,7 +4,9 @@ import {
   effectiveWorkMinutes,
   estimatedShiftEndTime,
   isInLunchBreak,
+  progressRatioWithSchedule,
   remainingShiftMinutes,
+  shiftStatusWithSchedule,
   shouldRemindToStart
 } from "./schedule";
 
@@ -82,6 +84,36 @@ describe("remainingShiftMinutes", () => {
         now: new Date(2026, 4, 29, 14, 0)
       })
     ).toBe(240);
+  });
+});
+
+describe("shiftStatusWithSchedule", () => {
+  it("does not complete until lunch-aware end time is reached", () => {
+    const workday = record({
+      checkInAt: new Date(2026, 4, 29, 9, 0).toISOString(),
+      targetMinutes: 480
+    });
+
+    expect(shiftStatusWithSchedule(workday, settings, new Date(2026, 4, 29, 17, 0))).toBe(
+      "working"
+    );
+    expect(shiftStatusWithSchedule(workday, settings, new Date(2026, 4, 29, 18, 0))).toBe(
+      "completed"
+    );
+  });
+});
+
+describe("progressRatioWithSchedule", () => {
+  it("keeps progress below 100 percent before lunch-aware end time", () => {
+    const workday = record({
+      checkInAt: new Date(2026, 4, 29, 9, 0).toISOString(),
+      targetMinutes: 480
+    });
+
+    expect(progressRatioWithSchedule(workday, settings, new Date(2026, 4, 29, 17, 0))).toBe(
+      7 / 8
+    );
+    expect(progressRatioWithSchedule(workday, settings, new Date(2026, 4, 29, 18, 0))).toBe(1);
   });
 });
 
