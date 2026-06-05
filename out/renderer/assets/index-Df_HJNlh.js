@@ -14052,145 +14052,8 @@ function cleanEscapedString(input) {
   }
   return matched[1].replace(doubleQuoteRegExp, "'");
 }
-function isSameMonth(laterDate, earlierDate, options) {
-  const [laterDate_, earlierDate_] = normalizeDates(
-    options?.in,
-    laterDate,
-    earlierDate
-  );
-  return laterDate_.getFullYear() === earlierDate_.getFullYear() && laterDate_.getMonth() === earlierDate_.getMonth();
-}
 function subMonths(date, amount, options) {
   return addMonths(date, -1, options);
-}
-function dateKeyWithTime(dateKey, timeValue) {
-  const [year = "0", month = "1", day = "1"] = dateKey.split("-");
-  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
-  return new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hoursValue),
-    Number(minutesValue),
-    0,
-    0
-  );
-}
-function dateWithTime(now, timeValue) {
-  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
-  const selected = new Date(now);
-  selected.setHours(Number(hoursValue), Number(minutesValue), 0, 0);
-  return selected.getTime() > now.getTime() ? new Date(now) : selected;
-}
-function elapsedMinutes(record, now) {
-  if (!record.checkInAt) {
-    return 0;
-  }
-  const start = new Date(record.checkInAt).getTime();
-  const end = record.checkOutAt ? new Date(record.checkOutAt).getTime() : now.getTime();
-  const elapsedMs = Math.max(0, end - start);
-  return Math.floor(elapsedMs / 6e4);
-}
-function shiftStatus(record, now) {
-  if (!record?.checkInAt) {
-    return "not_started";
-  }
-  if (record.checkOutAt) {
-    return "checked_out";
-  }
-  if (elapsedMinutes(record, now) >= record.targetMinutes) {
-    return "completed";
-  }
-  return "working";
-}
-function progressRatio(record, now) {
-  if (!record || record.targetMinutes <= 0) {
-    return 0;
-  }
-  return Math.min(1, elapsedMinutes(record, now) / record.targetMinutes);
-}
-function formatDuration(minutes) {
-  const safeMinutes = Math.max(0, Math.floor(minutes));
-  const hours = Math.floor(safeMinutes / 60);
-  const remainingMinutes = safeMinutes % 60;
-  return `${hours}h${remainingMinutes.toString().padStart(2, "0")}`;
-}
-function buildWorkdayRecordFromTimes({
-  existing,
-  date,
-  checkInTime,
-  checkOutTime,
-  targetMinutes
-}) {
-  const checkInAt = dateKeyWithTime(date, checkInTime);
-  const checkOutAt = dateKeyWithTime(date, checkOutTime);
-  return {
-    date,
-    targetMinutes,
-    note: "",
-    isDayOff: false,
-    isOvertime: false,
-    ...existing,
-    checkInAt: checkInAt.toISOString(),
-    checkOutAt: checkOutAt.toISOString()
-  };
-}
-function isInMonth(record, month) {
-  return record.date.startsWith(`${month}-`);
-}
-function localDateFromKey(date) {
-  return /* @__PURE__ */ new Date(`${date}T00:00:00`);
-}
-function localTimeLabel(value) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
-  }).format(new Date(value));
-}
-function weekdayLabel(date) {
-  return new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(localDateFromKey(date));
-}
-function workdayLogRows(records, month, now) {
-  return records.filter((record) => isInMonth(record, month)).sort((left, right) => right.date.localeCompare(left.date)).map((record) => {
-    const day = record.date.slice(8, 10);
-    if (record.isDayOff) {
-      return {
-        date: record.date,
-        day,
-        weekday: weekdayLabel(record.date),
-        time: "Day off",
-        total: "-",
-        badge: "Day off",
-        tone: "muted"
-      };
-    }
-    if (!record.checkInAt) {
-      return {
-        date: record.date,
-        day,
-        weekday: weekdayLabel(record.date),
-        time: "Not started",
-        total: "-",
-        badge: "Idle",
-        tone: "muted"
-      };
-    }
-    const minutes = elapsedMinutes(record, now);
-    const checkIn = localTimeLabel(record.checkInAt);
-    const checkOut = record.checkOutAt ? localTimeLabel(record.checkOutAt) : "Working";
-    const isComplete = minutes >= record.targetMinutes;
-    const isWorking = !record.checkOutAt;
-    return {
-      date: record.date,
-      day,
-      weekday: weekdayLabel(record.date),
-      time: `${checkIn} -> ${checkOut}`,
-      total: formatDuration(minutes),
-      badge: isWorking ? "Working" : isComplete ? "Full" : "Short",
-      tone: isWorking ? "warning" : isComplete ? "success" : "danger"
-    };
-  });
 }
 function minutesFromTime(value) {
   const [hours = "0", minutes = "0"] = value.split(":");
@@ -14326,6 +14189,157 @@ function shouldRemindToStart({
   }
   const elapsedMs = now.getTime() - lastReminderAt.getTime();
   return elapsedMs >= settings.startReminderIntervalMinutes * 6e4;
+}
+function dateKeyWithTime(dateKey, timeValue) {
+  const [year = "0", month = "1", day = "1"] = dateKey.split("-");
+  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hoursValue),
+    Number(minutesValue),
+    0,
+    0
+  );
+}
+function dateWithTime(now, timeValue) {
+  const [hoursValue = "0", minutesValue = "0"] = timeValue.split(":");
+  const selected = new Date(now);
+  selected.setHours(Number(hoursValue), Number(minutesValue), 0, 0);
+  return selected.getTime() > now.getTime() ? new Date(now) : selected;
+}
+function elapsedMinutes(record, now) {
+  if (!record.checkInAt) {
+    return 0;
+  }
+  const start = new Date(record.checkInAt).getTime();
+  const end = record.checkOutAt ? new Date(record.checkOutAt).getTime() : now.getTime();
+  const elapsedMs = Math.max(0, end - start);
+  return Math.floor(elapsedMs / 6e4);
+}
+function shiftStatus(record, now) {
+  if (!record?.checkInAt) {
+    return "not_started";
+  }
+  if (record.checkOutAt) {
+    return "checked_out";
+  }
+  if (elapsedMinutes(record, now) >= record.targetMinutes) {
+    return "completed";
+  }
+  return "working";
+}
+function progressRatio(record, now) {
+  if (!record || record.targetMinutes <= 0) {
+    return 0;
+  }
+  return Math.min(1, elapsedMinutes(record, now) / record.targetMinutes);
+}
+function formatDuration(minutes) {
+  const safeMinutes = Math.max(0, Math.floor(minutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
+  return `${hours}h${remainingMinutes.toString().padStart(2, "0")}`;
+}
+function buildWorkdayRecordFromTimes({
+  existing,
+  date,
+  checkInTime,
+  checkOutTime,
+  targetMinutes
+}) {
+  const checkInAt = dateKeyWithTime(date, checkInTime);
+  return {
+    date,
+    targetMinutes,
+    note: "",
+    isDayOff: false,
+    isOvertime: false,
+    ...existing,
+    checkInAt: checkInAt.toISOString(),
+    checkOutAt: checkOutTime ? dateKeyWithTime(date, checkOutTime).toISOString() : void 0
+  };
+}
+function isInMonth(record, month) {
+  return record.date.startsWith(`${month}-`);
+}
+function monthlyTotalMinutes(records, month, now = /* @__PURE__ */ new Date(), settings) {
+  return records.filter((record) => isInMonth(record, month)).reduce((total, record) => total + loggedMinutes(record, now, settings), 0);
+}
+function localDateFromKey(date) {
+  return /* @__PURE__ */ new Date(`${date}T00:00:00`);
+}
+function localTimeLabel(value) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(value));
+}
+function weekdayLabel(date) {
+  return new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(localDateFromKey(date));
+}
+function localDateKey$1(date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function loggedMinutes(record, now, settings) {
+  if (!record.checkInAt || !record.checkOutAt) {
+    return 0;
+  }
+  if (!settings) {
+    return elapsedMinutes(record, now);
+  }
+  return elapsedWorkMinutesWithSchedule({
+    settings,
+    checkInAt: new Date(record.checkInAt),
+    now: new Date(record.checkOutAt)
+  });
+}
+function workdayLogRows(records, month, now, settings) {
+  return records.filter((record) => isInMonth(record, month)).sort((left, right) => right.date.localeCompare(left.date)).map((record) => {
+    const day = record.date.slice(8, 10);
+    if (record.isDayOff) {
+      return {
+        date: record.date,
+        day,
+        weekday: weekdayLabel(record.date),
+        time: "Day off",
+        total: "-",
+        badge: "Day off",
+        tone: "muted"
+      };
+    }
+    if (!record.checkInAt) {
+      return {
+        date: record.date,
+        day,
+        weekday: weekdayLabel(record.date),
+        time: "Not started",
+        total: "-",
+        badge: "Idle",
+        tone: "muted"
+      };
+    }
+    const checkIn = localTimeLabel(record.checkInAt);
+    const checkOut = record.checkOutAt ? localTimeLabel(record.checkOutAt) : "-";
+    const isWorking = !record.checkOutAt;
+    const isMissingCheckOut = isWorking && record.date !== localDateKey$1(now);
+    const minutes = isWorking ? 0 : loggedMinutes(record, now, settings);
+    const isComplete = minutes >= record.targetMinutes;
+    return {
+      date: record.date,
+      day,
+      weekday: weekdayLabel(record.date),
+      time: `${checkIn} -> ${checkOut}`,
+      total: isWorking ? "-" : formatDuration(minutes),
+      badge: isMissingCheckOut ? "Missing" : isWorking ? "Working" : isComplete ? "Full" : "Short",
+      tone: isWorking ? isMissingCheckOut ? "danger" : "warning" : isComplete ? "success" : "danger"
+    };
+  });
 }
 const BROWSER_STORAGE_KEY = "workshift-tracker-state";
 const NO_ELECTRON_WINDOW_CONTROL = {
@@ -14589,6 +14603,10 @@ function App() {
   const progressPercent = Math.round(
     (settings ? progressRatioWithSchedule(todayRecord, settings, now) : progressRatio(todayRecord, now)) * 100
   );
+  const visualProgressPercent = Math.min(100, Math.max(0, progressPercent));
+  const progressRingRadius = 56;
+  const progressRingCircumference = 2 * Math.PI * progressRingRadius;
+  const progressRingOffset = progressRingCircumference * (1 - visualProgressPercent / 100);
   const remaining = todayRecord?.checkInAt && settings ? remainingShiftMinutes({
     settings,
     checkInAt: new Date(todayRecord.checkInAt),
@@ -14607,12 +14625,9 @@ function App() {
     }),
     "HH:mm"
   ) : "--:--";
-  const monthRecords = state?.records.filter((record) => isSameMonth(new Date(record.date), selectedMonth)) ?? [];
-  const monthlyMinutes = monthRecords.reduce(
-    (total, record) => total + elapsedMinutes(record, now),
-    0
-  );
-  const logRows = workdayLogRows(state?.records ?? [], format(selectedMonth, "yyyy-MM"), now);
+  const selectedMonthKey = format(selectedMonth, "yyyy-MM");
+  const monthlyMinutes = monthlyTotalMinutes(state?.records ?? [], selectedMonthKey, now, settings);
+  const logRows = workdayLogRows(state?.records ?? [], selectedMonthKey, now, settings);
   const completedLogCount = logRows.filter((row) => row.badge === "Full").length;
   const shortLogCount = logRows.filter((row) => row.badge === "Short").length;
   const effectiveMinutes = settings ? effectiveWorkMinutes(settings) : 0;
@@ -14726,10 +14741,6 @@ function App() {
     const targetMinutes = settings?.targetMinutes ?? 480;
     if (!editingLogDate || !editCheckInTime) {
       setEditLogError("Check-in time is required.");
-      return;
-    }
-    if (!editCheckOutTime) {
-      setEditLogError("Check-out time is required.");
       return;
     }
     const nextRecord = buildWorkdayRecordFromTimes({
@@ -14904,17 +14915,51 @@ function App() {
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
         {
-          className: `start-circle ${isWorking ? "start-circle-active" : ""}`,
+          className: `start-circle ${isWorking ? `start-circle-active ${canEndNormally ? "start-circle-end-ready" : "start-circle-end-early"}` : ""}`,
           type: "button",
-          disabled: !canCheckIn,
-          style: isWorking ? { "--shift-progress": `${progressPercent}%` } : void 0,
-          onClick: () => void handleCheckIn(),
+          disabled: !canCheckIn && !isWorking,
+          "aria-label": isWorking ? "End shift" : "Start shift",
+          title: isWorking ? "End shift" : "Start shift",
+          style: isWorking ? {
+            "--shift-progress": `${visualProgressPercent}%`,
+            "--shift-progress-deg": `${visualProgressPercent * 3.6}deg`
+          } : void 0,
+          onClick: () => void (isWorking ? handleEndShift() : handleCheckIn()),
           children: isWorking ? /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "shift-progress-ring", "aria-label": `${progressPercent}% complete`, children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("strong", { children: [
-              progressPercent,
-              "%"
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("svg", { className: "shift-progress-svg", viewBox: "0 0 120 120", "aria-hidden": "true", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "circle",
+                {
+                  className: "shift-progress-track",
+                  cx: "60",
+                  cy: "60",
+                  r: progressRingRadius
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "circle",
+                {
+                  className: "shift-progress-bar",
+                  cx: "60",
+                  cy: "60",
+                  r: progressRingRadius,
+                  strokeDasharray: progressRingCircumference,
+                  strokeDashoffset: progressRingOffset
+                }
+              )
             ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("small", { children: formatDuration(remaining) })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shift-progress-face", "aria-hidden": "true" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "shift-progress-default", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("strong", { children: [
+                progressPercent,
+                "%"
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("small", { children: formatDuration(remaining) })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "shift-progress-hover", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(IconLogout2, { size: 22 }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "End shift" })
+            ] })
           ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(IconPlayerPlay, { size: 28 }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "START SHIFT" })
@@ -15028,30 +15073,29 @@ function App() {
           ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "button",
+      showEarlyWarning && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "modal-backdrop", "aria-hidden": "false", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+        "div",
         {
-          className: "end-button",
-          type: "button",
-          disabled: !isWorking,
-          onClick: () => void handleEndShift(),
-          children: "End shift"
+          className: "warning-modal early-warning-modal",
+          role: "dialog",
+          "aria-label": "Early end warning",
+          "aria-modal": "true",
+          children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "End shift early?" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { children: [
+              formatDuration(elapsed),
+              " done / ",
+              formatDuration(target),
+              " required.",
+              remaining > 0 ? ` ${formatDuration(remaining)} remaining.` : ""
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-actions", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => setShowEarlyWarning(false), children: "Continue working" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => void handleEndEarly(), children: "End early" })
+            ] })
+          ]
         }
-      ),
-      showEarlyWarning && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "warning-modal", role: "dialog", "aria-label": "Early end warning", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "End shift early?" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { children: [
-          formatDuration(elapsed),
-          " done / ",
-          formatDuration(target),
-          " required.",
-          remaining > 0 ? ` ${formatDuration(remaining)} remaining.` : ""
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "modal-actions", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => setShowEarlyWarning(false), children: "Continue working" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => void handleEndEarly(), children: "End early" })
-        ] })
-      ] })
+      ) })
     ] }),
     screen === "history" && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { className: "screen-content", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "month-nav", children: [

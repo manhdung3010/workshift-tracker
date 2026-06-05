@@ -22,9 +22,9 @@ import {
   IconX,
   IconWindowMinimize
 } from "@tabler/icons-react";
-import { addMonths, format, isSameMonth, subMonths } from "date-fns";
+import { addMonths, format, subMonths } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildWorkdayRecordFromTimes, workdayLogRows } from "./domain/records";
+import { buildWorkdayRecordFromTimes, monthlyTotalMinutes, workdayLogRows } from "./domain/records";
 import {
   effectiveWorkMinutes,
   estimatedShiftEndTime,
@@ -158,6 +158,11 @@ export function App(): React.JSX.Element {
       ? progressRatioWithSchedule(todayRecord, settings, now)
       : progressRatio(todayRecord, now)) * 100
   );
+  const visualProgressPercent = Math.min(100, Math.max(0, progressPercent));
+  const progressRingRadius = 56;
+  const progressRingCircumference = 2 * Math.PI * progressRingRadius;
+  const progressRingOffset =
+    progressRingCircumference * (1 - visualProgressPercent / 100);
   const remaining =
     todayRecord?.checkInAt && settings
       ? remainingShiftMinutes({
@@ -181,12 +186,9 @@ export function App(): React.JSX.Element {
         "HH:mm"
       )
     : "--:--";
-  const monthRecords = state?.records.filter((record) => isSameMonth(new Date(record.date), selectedMonth)) ?? [];
-  const monthlyMinutes = monthRecords.reduce(
-    (total, record) => total + elapsedMinutes(record, now),
-    0
-  );
-  const logRows = workdayLogRows(state?.records ?? [], format(selectedMonth, "yyyy-MM"), now);
+  const selectedMonthKey = format(selectedMonth, "yyyy-MM");
+  const monthlyMinutes = monthlyTotalMinutes(state?.records ?? [], selectedMonthKey, now, settings);
+  const logRows = workdayLogRows(state?.records ?? [], selectedMonthKey, now, settings);
   const completedLogCount = logRows.filter((row) => row.badge === "Full").length;
   const shortLogCount = logRows.filter((row) => row.badge === "Short").length;
   const effectiveMinutes = settings ? effectiveWorkMinutes(settings) : 0;
@@ -323,11 +325,6 @@ export function App(): React.JSX.Element {
 
     if (!editingLogDate || !editCheckInTime) {
       setEditLogError("Check-in time is required.");
-      return;
-    }
-
-    if (!editCheckOutTime) {
-      setEditLogError("Check-out time is required.");
       return;
     }
 
@@ -505,20 +502,54 @@ export function App(): React.JSX.Element {
             </div>
 
             <button
-              className={`start-circle ${isWorking ? "start-circle-active" : ""}`}
+              className={`start-circle ${
+                isWorking
+                  ? `start-circle-active ${
+                      canEndNormally ? "start-circle-end-ready" : "start-circle-end-early"
+                    }`
+                  : ""
+              }`}
               type="button"
-              disabled={!canCheckIn}
+              disabled={!canCheckIn && !isWorking}
+              aria-label={isWorking ? "End shift" : "Start shift"}
+              title={isWorking ? "End shift" : "Start shift"}
               style={
                 isWorking
-                  ? ({ "--shift-progress": `${progressPercent}%` } as React.CSSProperties)
+                  ? ({
+                      "--shift-progress": `${visualProgressPercent}%`,
+                      "--shift-progress-deg": `${visualProgressPercent * 3.6}deg`
+                    } as React.CSSProperties)
                   : undefined
               }
-              onClick={() => void handleCheckIn()}
+              onClick={() => void (isWorking ? handleEndShift() : handleCheckIn())}
             >
               {isWorking ? (
                 <span className="shift-progress-ring" aria-label={`${progressPercent}% complete`}>
-                  <strong>{progressPercent}%</strong>
-                  <small>{formatDuration(remaining)}</small>
+                  <svg className="shift-progress-svg" viewBox="0 0 120 120" aria-hidden="true">
+                    <circle
+                      className="shift-progress-track"
+                      cx="60"
+                      cy="60"
+                      r={progressRingRadius}
+                    />
+                    <circle
+                      className="shift-progress-bar"
+                      cx="60"
+                      cy="60"
+                      r={progressRingRadius}
+                      strokeDasharray={progressRingCircumference}
+                      strokeDashoffset={progressRingOffset}
+                    />
+                  </svg>
+                  <span className="shift-progress-face" aria-hidden="true" />
+                  <span className="shift-progress-default">
+                    <strong>{progressPercent}%</strong>
+                    <small>{formatDuration(remaining)}</small>
+                  </span>
+                  <span className="shift-progress-hover">
+                    <IconLogout2 size={22} />
+                    <strong>End shift</strong>
+                  </span>
                 </span>
               ) : (
                 <>
@@ -646,29 +677,27 @@ export function App(): React.JSX.Element {
               </>
             )}
 
-            <button
-              className="end-button"
-              type="button"
-              disabled={!isWorking}
-              onClick={() => void handleEndShift()}
-            >
-              End shift
-            </button>
-
             {showEarlyWarning && (
-              <div className="warning-modal" role="dialog" aria-label="Early end warning">
-                <strong>End shift early?</strong>
-                <p>
-                  {formatDuration(elapsed)} done / {formatDuration(target)} required.
-                  {remaining > 0 ? ` ${formatDuration(remaining)} remaining.` : ""}
-                </p>
-                <div className="modal-actions">
-                  <button type="button" onClick={() => setShowEarlyWarning(false)}>
-                    Continue working
-                  </button>
-                  <button type="button" onClick={() => void handleEndEarly()}>
-                    End early
-                  </button>
+              <div className="modal-backdrop" aria-hidden="false">
+                <div
+                  className="warning-modal early-warning-modal"
+                  role="dialog"
+                  aria-label="Early end warning"
+                  aria-modal="true"
+                >
+                  <strong>End shift early?</strong>
+                  <p>
+                    {formatDuration(elapsed)} done / {formatDuration(target)} required.
+                    {remaining > 0 ? ` ${formatDuration(remaining)} remaining.` : ""}
+                  </p>
+                  <div className="modal-actions">
+                    <button type="button" onClick={() => setShowEarlyWarning(false)}>
+                      Continue working
+                    </button>
+                    <button type="button" onClick={() => void handleEndEarly()}>
+                      End early
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

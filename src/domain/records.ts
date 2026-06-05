@@ -1,4 +1,5 @@
-import type { WorkdayRecord } from "../types/workshift";
+import type { WorkdayRecord, WorkshiftSettings } from "../types/workshift";
+import { elapsedWorkMinutesWithSchedule } from "./schedule";
 import { dateKeyWithTime, elapsedMinutes, formatDuration } from "./time";
 
 export type WeeklyTotal = {
@@ -20,7 +21,7 @@ export type WorkdayRecordTimeInput = {
   existing?: WorkdayRecord;
   date: string;
   checkInTime: string;
-  checkOutTime: string;
+  checkOutTime?: string;
   targetMinutes: number;
 };
 
@@ -32,8 +33,6 @@ export function buildWorkdayRecordFromTimes({
   targetMinutes
 }: WorkdayRecordTimeInput): WorkdayRecord {
   const checkInAt = dateKeyWithTime(date, checkInTime);
-  const checkOutAt = dateKeyWithTime(date, checkOutTime);
-
   return {
     date,
     targetMinutes,
@@ -42,7 +41,7 @@ export function buildWorkdayRecordFromTimes({
     isOvertime: false,
     ...existing,
     checkInAt: checkInAt.toISOString(),
-    checkOutAt: checkOutAt.toISOString()
+    checkOutAt: checkOutTime ? dateKeyWithTime(date, checkOutTime).toISOString() : undefined
   };
 }
 
@@ -62,11 +61,13 @@ function weekOfMonth(date: string): number {
 
 export function monthlyTotalMinutes(
   records: WorkdayRecord[],
-  month: string
+  month: string,
+  now = new Date(),
+  settings?: WorkshiftSettings
 ): number {
   return records
     .filter((record) => isInMonth(record, month))
-    .reduce((total, record) => total + elapsedMinutes(record, new Date()), 0);
+    .reduce((total, record) => total + loggedMinutes(record, now, settings), 0);
 }
 
 export function workedDays(records: WorkdayRecord[], month: string): number {
@@ -129,10 +130,39 @@ function weekdayLabel(date: string): string {
   return new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(localDateFromKey(date));
 }
 
+function localDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function loggedMinutes(
+  record: WorkdayRecord,
+  now: Date,
+  settings: WorkshiftSettings | undefined
+): number {
+  if (!record.checkInAt || !record.checkOutAt) {
+    return 0;
+  }
+
+  if (!settings) {
+    return elapsedMinutes(record, now);
+  }
+
+  return elapsedWorkMinutesWithSchedule({
+    settings,
+    checkInAt: new Date(record.checkInAt),
+    now: new Date(record.checkOutAt)
+  });
+}
+
 export function workdayLogRows(
   records: WorkdayRecord[],
   month: string,
-  now: Date
+  now: Date,
+  settings?: WorkshiftSettings
 ): WorkdayLogRow[] {
   return records
     .filter((record) => isInMonth(record, month))
@@ -164,20 +194,21 @@ export function workdayLogRows(
         };
       }
 
-      const minutes = elapsedMinutes(record, now);
       const checkIn = localTimeLabel(record.checkInAt);
-      const checkOut = record.checkOutAt ? localTimeLabel(record.checkOutAt) : "Working";
-      const isComplete = minutes >= record.targetMinutes;
+      const checkOut = record.checkOutAt ? localTimeLabel(record.checkOutAt) : "-";
       const isWorking = !record.checkOutAt;
+      const isMissingCheckOut = isWorking && record.date !== localDateKey(now);
+      const minutes = isWorking ? 0 : loggedMinutes(record, now, settings);
+      const isComplete = minutes >= record.targetMinutes;
 
       return {
         date: record.date,
         day,
         weekday: weekdayLabel(record.date),
         time: `${checkIn} -> ${checkOut}`,
-        total: formatDuration(minutes),
-        badge: isWorking ? "Working" : isComplete ? "Full" : "Short",
-        tone: isWorking ? "warning" : isComplete ? "success" : "danger"
+        total: isWorking ? "-" : formatDuration(minutes),
+        badge: isMissingCheckOut ? "Missing" : isWorking ? "Working" : isComplete ? "Full" : "Short",
+        tone: isWorking ? (isMissingCheckOut ? "danger" : "warning") : isComplete ? "success" : "danger"
       };
     });
 }
